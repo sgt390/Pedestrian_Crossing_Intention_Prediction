@@ -17,5 +17,5 @@ exp_opts:
   batch_size: [1]
   epochs: [5]
   lr: [5.0e-07]
-data_opts
+data_opts:
   min_track_size: 16 # tracks shorter than this length will be discarded
