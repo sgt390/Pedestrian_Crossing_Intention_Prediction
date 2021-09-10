@@ -136,7 +136,7 @@ def run(config_file=None):
             # imdb = JAAD(data_path=os.environ.copy()['JAAD_PATH'])
 
             # if use local path
-            imdb = JAAD(data_path='/home/haolin/CITR/PedestrianActionBenchmark/JAAD/')
+            imdb = JAAD(data_path='./JAAD/')
 
         # get sequences
         beh_seq_train = imdb.generate_data_trajectory_sequence('train', **configs['data_opts'])
