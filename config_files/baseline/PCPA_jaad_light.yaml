@@ -1,10 +1,8 @@
 model_opts:
   model: PCPA_2D
-  obs_input_type: [local_context, pose, box, speed]
+  obs_input_type: [local_context_cnn, pose, box, speed]
   apply_class_weights: True
   normalize_boxes: True
-  obs_length: 16 # observation length
-  time_to_event: [30,10]  # 30, 60, [30,60]
   generator: True
 net_opts:
   num_hidden_units: 8
