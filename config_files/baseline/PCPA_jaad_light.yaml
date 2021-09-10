@@ -3,7 +3,7 @@ model_opts:
   obs_input_type: [local_context, pose, box, speed]
   apply_class_weights: True
   normalize_boxes: True
-  obs_length: 4 # observation length
+  obs_length: 16 # observation length
   time_to_event: [30,10]  # 30, 60, [30,60]
   generator: True
 net_opts:
