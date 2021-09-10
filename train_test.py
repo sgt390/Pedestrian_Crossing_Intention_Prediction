@@ -19,11 +19,6 @@ import tensorflow as tf
 # tf.test.is_gpu_available()
 
 
-config= tf.compat.v1.ConfigProto()
-config.gpu_options.per_process_gpu_memory_fraction = 0.7 #0.7parameter, meaning the percentage allocated to gpu-memory.
-sess=tf.compat.v1.Session(config=config)
-
-
 gpus = tf.config.experimental.list_physical_devices('GPU')
 assert len(gpus) > 0, "Not enough GPU hardware devices available"
 for gpu in gpus:
