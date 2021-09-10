@@ -4552,6 +4552,7 @@ class PCPA_2D(ActionPredict):
             cell_type: Type of RNN cell
             **kwargs: Description
         """
+        print('creating pcpa-2d')  # TODO delete line
         super().__init__(**kwargs)
         # Network parameters
         self._num_hidden_units = num_hidden_units

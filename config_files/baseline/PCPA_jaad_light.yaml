@@ -1,5 +1,5 @@
 model_opts:
-  model: PCPA
+  model: PCPA_2D
   obs_input_type: [local_context, pose, box, speed]
   apply_class_weights: True
   normalize_boxes: True
