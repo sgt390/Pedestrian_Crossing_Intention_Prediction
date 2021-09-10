@@ -10,12 +10,13 @@ from tensorflow.keras import backend as K
 
 from action_predict import action_prediction
 from action_predict import ActionPredict
-#from new_model import NewModel, HybridModel, MultiRNN3D, MultiRNN3D_MATT
+# from new_model import NewModel, HybridModel, MultiRNN3D, MultiRNN3D_MATT
 
 from jaad_data import JAAD
 # if use PIE data:
 # from pie_data import PIE
 import tensorflow as tf
+
 # tf.test.is_gpu_available()
 
 
@@ -35,13 +36,11 @@ for gpu in gpus:
 # sess = tf.compat.v1.Session(config=config)
 
 
-
 # from tensorflow.compat.v1 import ConfigProto
 # from tensorflow.compat.v1 import InteractiveSession
 # config = ConfigProto()
 # config.gpu_options.allow_growth = True
 # session = InteractiveSession(config=config)
-
 
 
 # config = tf.compat.v1.ConfigProto()
@@ -83,7 +82,7 @@ def run(config_file=None):
     """
     print(config_file)
     # Read default Config file
-    configs_default ='config_files/configs_default.yaml'
+    configs_default = 'config_files/configs_default.yaml'
     with open(configs_default, 'r') as f:
         configs = yaml.safe_load(f)
 
@@ -115,7 +114,7 @@ def run(config_file=None):
             configs['model_opts']['obs_input_type'] = configs['model_opts']['obs_input_type']
 
         for k, v in configs.items():
-            print(k,v)
+            print(k, v)
 
         # set batch size
         if model_name in ['ConvLSTM']:
@@ -144,7 +143,7 @@ def run(config_file=None):
         beh_seq_val = None
         # Uncomment the line below to use validation set
         # beh_seq_val = imdb.generate_data_trajectory_sequence('val', **configs['data_opts'])
-        beh_seq_test = imdb.generate_data_trajectory_sequence('test', **configs['data_opts']) ## load_dataset
+        beh_seq_test = imdb.generate_data_trajectory_sequence('test', **configs['data_opts'])  ## load_dataset
 
         # get the model
         method_class = action_prediction(configs['model_opts']['model'])(**configs['net_opts'])
@@ -170,6 +169,7 @@ def run(config_file=None):
 
         print('Model saved to {}'.format(saved_files_path))
 
+
 def usage():
     """
     Prints help
@@ -182,13 +182,14 @@ def usage():
     print('-c, --config_file\t', 'Path to config file')
     print()
 
+
 if __name__ == '__main__':
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hc:', ['help', 'config_file'])
     except getopt.GetoptError as err:
         print(str(err))
         usage()
-        sys.exit(2)    
+        sys.exit(2)
 
     config_file = None
     model_name = None
