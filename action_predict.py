@@ -773,6 +773,7 @@ class ActionPredict(object):
     def get_context_data(self, model_opts, data, data_type, feature_type):
         print('\n#####################################')
         print('Generating {} {}'.format(feature_type, data_type))
+        print('Generating {} {}'.format(feature_type, data_type))
         print('#####################################')
         process = model_opts.get('process', True)
         aux_name = [self._backbone]
