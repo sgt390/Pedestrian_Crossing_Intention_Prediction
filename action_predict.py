@@ -1,4 +1,3 @@
-
 import time
 import yaml
 import wget
@@ -25,7 +24,6 @@ from sklearn.metrics import roc_auc_score, roc_curve, precision_recall_curve
 from sklearn.svm import LinearSVC
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
-
 
 ## For deeplabV3 (segmentation)
 import numpy as np
@@ -164,6 +162,7 @@ def label_to_color_image(label):
     colormap = create_cityscapes_label_colormap()
     return colormap[label]
 
+
 def init_canvas(width, height, color=(255, 255, 255)):
     canvas = np.ones((height, width, 3), dtype="uint8")
     (channel_b, channel_g, channel_r) = cv2.split(canvas)
@@ -171,6 +170,7 @@ def init_canvas(width, height, color=(255, 255, 255)):
     channel_g *= color[1]
     channel_r *= color[2]
     return cv2.merge([channel_b, channel_g, channel_r])
+
 
 # def vis_segmentation(image, seg_map):
 #     """Visualizes input image, segmentation map and overlay view."""
@@ -214,9 +214,7 @@ def init_canvas(width, height, color=(255, 255, 255)):
 #     plt.show()
 
 
-
 ################################################
-
 
 
 # TODO: Make all global class parameters to minimum , e.g. no model generation
@@ -242,7 +240,7 @@ class ActionPredict(object):
         self._regularizer = regularizers.l2(regularizer_val)
         self._global_pooling = global_pooling
         self._backbone = backbone
-        self._generator = None # use data generator for train/test 
+        self._generator = None  # use data generator for train/test
 
     # Processing images anf generate features
     def load_images_crop_and_process(self, img_sequences, bbox_sequences,
@@ -348,7 +346,8 @@ class ActionPredict(object):
                         x = tf.keras.applications.vgg19.preprocess_input(x)
                         block4_pool_features = VGGmodel.predict(x)
                         img_features = block4_pool_features
-                        img_features = tf.nn.avg_pool2d(img_features, ksize=[14, 14], strides=[1, 1, 1, 1], padding='VALID')
+                        img_features = tf.nn.avg_pool2d(img_features, ksize=[14, 14], strides=[1, 1, 1, 1],
+                                                        padding='VALID')
                         img_features = tf.squeeze(img_features)
                         # with tf.compact.v1.Session():
                         img_features = img_features.numpy()
@@ -387,7 +386,8 @@ class ActionPredict(object):
                         x = tf.keras.applications.vgg19.preprocess_input(x)
                         block4_pool_features = VGGmodel.predict(x)
                         img_features = block4_pool_features
-                        img_features = tf.nn.avg_pool2d(img_features, ksize=[14, 14], strides=[1, 1, 1, 1], padding='VALID')
+                        img_features = tf.nn.avg_pool2d(img_features, ksize=[14, 14], strides=[1, 1, 1, 1],
+                                                        padding='VALID')
                         img_features = tf.squeeze(img_features)
                         # with tf.compact.v1.Session():
                         img_features = img_features.numpy()
@@ -408,13 +408,13 @@ class ActionPredict(object):
                         seg_image = label_to_color_image(seg_map).astype(np.uint8)
                         seg_image = cv2.cvtColor(seg_image, cv2.COLOR_BGR2RGB)
                         seg_image = cv2.addWeighted(resized_im, 0.5, seg_image, 0.5, 0)
-                        img_data = cv2.resize(seg_image, (ori_dim[1],ori_dim[0]))
+                        img_data = cv2.resize(seg_image, (ori_dim[1], ori_dim[0]))
 
                         # ped_mask = np.zeros((b_org[3]-b_org[1],b_org[2]-b_org[0], 3), dtype="uint8")
                         # ped_mask = init_canvas(b_org[3]-b_org[1], b_org[2]-b_org[0], color=(0, 0, 255))
                         # img_data[b_org[1]:b_org[3], b_org[0]:b_org[2], :]
                         ## mask_img_data + pd highlight ---> final_mask_img_data
-                        ped_mask = init_canvas(b[2]-b[0],b[3]-b[1], color=(255, 255, 255))
+                        ped_mask = init_canvas(b[2] - b[0], b[3] - b[1], color=(255, 255, 255))
                         # ped_fuse = cv2.addWeighted(img_data[b[1]:b[3], b[0]:b[2]], 0.5, ped_mask, 0.5, 0)
                         img_data[b[1]:b[3], b[0]:b[2]] = ped_mask
                         # cv2.imshow('mask_demo',img_data)
@@ -497,13 +497,13 @@ class ActionPredict(object):
         # Processing images anf generate features
 
     def get_optical_flow(self, img_sequences, bbox_sequences,
-                                     ped_ids, save_path,
-                                     data_type='train',
-                                     crop_type='none',
-                                     crop_mode='warp',
-                                     crop_resize_ratio=2,
-                                     target_dim=(224, 224),
-                                     regen_data=False):
+                         ped_ids, save_path,
+                         data_type='train',
+                         crop_type='none',
+                         crop_mode='warp',
+                         crop_resize_ratio=2,
+                         target_dim=(224, 224),
+                         regen_data=False):
         """
         Generate visual feature sequences by reading and processing images
         Args:
@@ -538,7 +538,7 @@ class ActionPredict(object):
         flow_size = read_flow_file(img_sequences[0][0].replace('images', 'optical_flow').replace('png', 'flo')).shape
         img_size = cv2.imread(img_sequences[0][0]).shape
         # A ratio to adjust the dimension of bounding boxes (w,h)
-        box_resize_coef = (flow_size[1]/img_size[1], flow_size[0]/img_size[0])
+        box_resize_coef = (flow_size[1] / img_size[1], flow_size[0] / img_size[0])
 
         for seq, pid in zip(img_sequences, ped_ids):
             i += 1
@@ -659,9 +659,9 @@ class ActionPredict(object):
             for k in d.keys():
                 for i in range(len(d[k])):
                     d[k][i] = d[k][i][- obs_length - time_to_event:-time_to_event]
-            d['tte'] = [[time_to_event]]*len(data_raw['bbox'])
+            d['tte'] = [[time_to_event]] * len(data_raw['bbox'])
         else:
-            overlap = opts['overlap'] # if data_type == 'train' else 0.0
+            overlap = opts['overlap']  # if data_type == 'train' else 0.0
             olap_res = obs_length if overlap == 0 else int((1 - overlap) * obs_length)
             olap_res = 1 if olap_res < 1 else olap_res
             for k in d.keys():
@@ -677,7 +677,7 @@ class ActionPredict(object):
                 start_idx = len(seq) - obs_length - time_to_event[1]
                 end_idx = len(seq) - obs_length - time_to_event[0]
                 d['tte'].extend([[len(seq) - (i + obs_length)] for i in
-                                range(start_idx, end_idx + 1, olap_res)])
+                                 range(start_idx, end_idx + 1, olap_res)])
         if normalize:
             for k in d.keys():
                 if k != 'tte':
@@ -879,7 +879,7 @@ class ActionPredict(object):
                                    input_type_list=model_opts['obs_input_type'],
                                    batch_size=model_opts['batch_size'],
                                    shuffle=data_type != 'test',
-                                   to_fit=data_type != 'test'), data['crossing']) # set y to None
+                                   to_fit=data_type != 'test'), data['crossing'])  # set y to None
         else:
             _data = (_data, data['crossing'])
 
@@ -905,9 +905,9 @@ class ActionPredict(object):
         """
         # Save config and training param files
         with open(config_path, 'wt') as fid:
-            yaml.dump({'model_opts': model_opts, 
-                       'train_opts': {'batch_size':batch_size, 'epochs': epochs, 'lr': lr}},
-                       fid, default_flow_style=False)
+            yaml.dump({'model_opts': model_opts,
+                       'train_opts': {'batch_size': batch_size, 'epochs': epochs, 'lr': lr}},
+                      fid, default_flow_style=False)
         # with open(config_path, 'wt') as fid:
         #     fid.write("####### Model options #######\n")
         #     for k in opts:
@@ -938,12 +938,12 @@ class ActionPredict(object):
 
         total = sample_count['neg_count'] + sample_count['pos_count']
         # formula from sklearn
-        #neg_weight = (1 / sample_count['neg_count']) * (total) / 2.0
-        #pos_weight = (1 / sample_count['pos_count']) * (total) / 2.0
-        
+        # neg_weight = (1 / sample_count['neg_count']) * (total) / 2.0
+        # pos_weight = (1 / sample_count['pos_count']) * (total) / 2.0
+
         # use simple ratio
-        neg_weight = sample_count['pos_count']/total
-        pos_weight = sample_count['neg_count']/total
+        neg_weight = sample_count['pos_count'] / total
+        pos_weight = sample_count['neg_count'] / total
 
         print("### Class weights: negative {:.3f} and positive {:.3f} ###".format(neg_weight, pos_weight))
         return {0: neg_weight, 1: pos_weight}
@@ -993,7 +993,7 @@ class ActionPredict(object):
             An optimizer object
         """
         assert optimizer.lower() in ['adam', 'sgd', 'rmsprop'], \
-        "{} optimizer is not implemented".format(optimizer)
+            "{} optimizer is not implemented".format(optimizer)
         if optimizer.lower() == 'adam':
             return Adam
         elif optimizer.lower() == 'sgd':
@@ -1032,7 +1032,7 @@ class ActionPredict(object):
         model_path, _ = get_path(**path_params, file_name='model.h5')
 
         # Read train data
-        data_train = self.get_data('train', data_train, {**model_opts, 'batch_size': batch_size}) 
+        data_train = self.get_data('train', data_train, {**model_opts, 'batch_size': batch_size})
 
         if data_val is not None:
             data_val = self.get_data('val', data_val, {**model_opts, 'batch_size': batch_size})['data']
@@ -1110,15 +1110,14 @@ class ActionPredict(object):
         precision = precision_score(test_data['data'][1], np.round(test_results))
         recall = recall_score(test_data['data'][1], np.round(test_results))
         pre_recall = precision_recall_curve(test_data['data'][1], test_results)
-        
+
         # THIS IS TEMPORARY, REMOVE BEFORE RELEASE
         with open(os.path.join(model_path, 'test_output.pkl'), 'wb') as picklefile:
             pickle.dump({'tte': test_data['tte'],
                          'pid': test_data['ped_id'],
-                         'gt':test_data['data'][1],
+                         'gt': test_data['data'][1],
                          'y': test_results,
                          'image': test_data['image']}, picklefile)
-
 
         print('acc:{:.2f} auc:{:.2f} f1:{:.2f} precision:{:.2f} recall:{:.2f}'.format(acc, auc, f1, precision, recall))
 
@@ -1207,6 +1206,7 @@ class ActionPredict(object):
 
 class SingleRNN(ActionPredict):
     """ A simple recurrent network """
+
     def __init__(self,
                  num_hidden_units=256,
                  cell_type='gru', **kwargs):
@@ -1251,6 +1251,7 @@ class StackedRNN(ActionPredict):
     """ A stacked recurrent prediction model based on
     Yue-Hei et al. "Beyond short snippets: Deep networks for video classification."
     CVPR, 2015." """
+
     def __init__(self,
                  num_hidden_units=256,
                  cell_type='gru', **kwargs):
@@ -1293,6 +1294,7 @@ class MultiRNN(ActionPredict):
     Bhattacharyya et al. "Long-term on-board prediction of people in traffic
     scenes under uncertainty." CVPR, 2018.
     """
+
     def __init__(self,
                  num_hidden_units=256,
                  cell_type='gru', **kwargs):
@@ -1338,6 +1340,7 @@ class HierarchicalRNN(ActionPredict):
     Du et al. "Hierarchical recurrent neural network for skeleton
     based action recognition." CVPR, 2015.
     """
+
     def __init__(self,
                  num_hidden_units=256,
                  cell_type='gru', **kwargs):
@@ -1386,6 +1389,7 @@ class SFRNN(ActionPredict):
     Rasouli et al. "Pedestrian Action Anticipation using Contextual Feature Fusion in Stacked RNNs."
     BMVC, 2020. The original code can be found at https://github.com/aras62/SF-GRU
     """
+
     def __init__(self,
                  num_hidden_units=256,
                  cell_type='gru', **kwargs):
@@ -1434,6 +1438,7 @@ class C3D(ActionPredict):
     CVPR, 2015. The code is based on implementation availble at
     https://github.com/adamcasson/c3d
     """
+
     def __init__(self,
                  dropout=0.5,
                  dense_activation='sigmoid',
@@ -1457,7 +1462,6 @@ class C3D(ActionPredict):
         self._backbone = 'c3d'
 
     def get_data(self, data_type, data_raw, model_opts):
-
         assert len(model_opts['obs_input_type']) == 1
         assert model_opts['obs_length'] == 16
 
@@ -1489,6 +1493,7 @@ class I3D(ActionPredict):
     CVPR 2017. This model is based on the original code published by the authors which
     can be found at https://github.com/deepmind/kinetics-i3d
     """
+
     def __init__(self,
                  dropout=0.5,
                  dense_activation='sigmoid',
@@ -1525,16 +1530,16 @@ class I3D(ActionPredict):
 
         if 'flow' in data_params['data_types'][0]:
             weights_url = 'https://github.com/dlpbc/keras-kinetics-i3d/releases/download/v0.2/flow_inception_i3d_imagenet_and_kinetics_tf_dim_ordering_tf_kernels.h5'
-            self._weights='weights/i3d_flow_weights.h5'
+            self._weights = 'weights/i3d_flow_weights.h5'
             num_channels = 2
         else:
             weights_url = 'https://github.com/dlpbc/keras-kinetics-i3d/releases/download/v0.2/rgb_inception_i3d_imagenet_and_kinetics_tf_dim_ordering_tf_kernels.h5'
             num_channels = 3
-            self._weights='weights/i3d_rgb_weights.h5'
+            self._weights = 'weights/i3d_rgb_weights.h5'
 
         if not os.path.exists(self._weights):
             wget.download(weights_url, self._weights)
-        
+
         net_model = I3DNet(freeze_conv_layers=self._freeze_conv_layers, weights=self._weights,
                            dense_activation=self._dense_activation, dropout=self._dropout,
                            num_channels=num_channels, include_top=True)
@@ -1550,6 +1555,7 @@ class TwoStreamI3D(ActionPredict):
     CVPR 2017. This model is based on the original code published by the authors which
     can be found at https://github.com/deepmind/kinetics-i3d
     """
+
     def __init__(self,
                  dropout=0.5,
                  dense_activation='sigmoid',
@@ -1637,7 +1643,7 @@ class TwoStreamI3D(ActionPredict):
         return saved_files_path
 
     def train_model(self, model_type, path_params, learning_scheduler, data_train, data_val,
-                    optimizer, batch_size, model_opts,  epochs, lr, **kwargs):
+                    optimizer, batch_size, model_opts, epochs, lr, **kwargs):
         """
         Trains a single model
         Args:
@@ -1670,7 +1676,7 @@ class TwoStreamI3D(ActionPredict):
 
         data_path_params = {**path_params, 'sub_folder': model_type}
         model_path, _ = get_path(**data_path_params, file_name='model.h5')
-        callbacks = self.get_callbacks(learning_scheduler,model_path)
+        callbacks = self.get_callbacks(learning_scheduler, model_path)
 
         history = train_model.fit(x=data_train['data'][0],
                                   y=None if self._generator else data_train['data'][1],
@@ -1687,7 +1693,6 @@ class TwoStreamI3D(ActionPredict):
         history_path, saved_files_path = get_path(**data_path_params, file_name='history.pkl')
         with open(history_path, 'wb') as fid:
             pickle.dump(history.history, fid, pickle.HIGHEST_PROTOCOL)
-
 
     def test(self, data_test, model_path=''):
         with open(os.path.join(model_path, 'model_opts.pkl'), 'rb') as fid:
@@ -1742,6 +1747,7 @@ class Static(ActionPredict):
     A static model which uses features from the last convolution
     layer and a dense layer to classify
     """
+
     def __init__(self,
                  dropout=0.0,
                  dense_activation='sigmoid',
@@ -1814,16 +1820,15 @@ class Static(ActionPredict):
         _data_samples['crossing'] = data['crossing']
         data_type_sizes_dict = {}
 
-
         print('\n#####################################')
         print('Generating {} {}'.format(feature_type, data_type))
         print('#####################################')
 
         save_folder_name = '_'.join(['local_context', aux_name, str(eratio)]) if feature_type == 'local_context' \
-                           else '_'.join(['local_box', aux_name])
+            else '_'.join(['local_box', aux_name])
         path_to_features, _ = get_path(save_folder=save_folder_name,
-                                          dataset=dataset,
-                                          save_root_folder='data/features')
+                                       dataset=dataset,
+                                       save_root_folder='data/features')
         data_gen_params = {'data_type': data_type, 'save_path': path_to_features,
                            'crop_type': 'none', 'process': process}
 
@@ -1841,11 +1846,10 @@ class Static(ActionPredict):
                 else:
                     data[k] = np.expand_dims(v[:, -1], axis=-1)
 
-
         _data_samples[feature_type], feat_shape = self.load_images_crop_and_process(data['image'],
-                                                                      data['box_org'],
-                                                                      data['ped_id'],
-                                                                      **data_gen_params)
+                                                                                    data['box_org'],
+                                                                                    data['ped_id'],
+                                                                                    **data_gen_params)
         if not self._generator:
             _data_samples[feature_type] = np.squeeze(_data_samples[feature_type])
         data_type_sizes_dict[feature_type] = feat_shape[1:]
@@ -1853,14 +1857,14 @@ class Static(ActionPredict):
         # create the final data file to be returned
         if self._generator:
             _data_rgb = (DataGenerator(data=[_data_samples[feature_type]],
-                                   labels=data['crossing'],
-                                   data_sizes=[data_type_sizes_dict[feature_type]],
-                                   process=process,
-                                   global_pooling=self._global_pooling,
-                                   input_type_list=model_opts['obs_input_type'],
-                                   batch_size=model_opts['batch_size'],
-                                   shuffle=data_type != 'test',
-                                   to_fit=data_type != 'test'), _data_samples['crossing'])  # set y to None
+                                       labels=data['crossing'],
+                                       data_sizes=[data_type_sizes_dict[feature_type]],
+                                       process=process,
+                                       global_pooling=self._global_pooling,
+                                       input_type_list=model_opts['obs_input_type'],
+                                       batch_size=model_opts['batch_size'],
+                                       shuffle=data_type != 'test',
+                                       to_fit=data_type != 'test'), _data_samples['crossing'])  # set y to None
 
         else:
             _data_rgb = (_data_samples[feature_type], _data_samples['crossing'])
@@ -1891,6 +1895,7 @@ class ConvLSTM(ActionPredict):
     """
     A Convolutional LSTM model for sequence learning
     """
+
     def __init__(self,
                  global_pooling='avg',
                  filter=64,
@@ -1950,6 +1955,7 @@ class MASK_ConvLSTM(ActionPredict):
     """
     A Convolutional LSTM model for sequence learning
     """
+
     def __init__(self,
                  global_pooling='avg',
                  filter=64,
@@ -1999,15 +2005,15 @@ class MASK_ConvLSTM(ActionPredict):
             out = GlobalMaxPooling2D()(convlstm)
         else:
             out = Flatten(name='flatten')(convlstm)
-######  For  MASK
+        ######  For  MASK
         data_size = data_params['data_sizes'][1]
         data_type = data_params['data_types'][1]
 
         x_in2 = Input(shape=data_size, name='input2_' + data_type)
         convlstm2 = ConvLSTM2D(filters=self._filter, kernel_size=self._kernel_size,
-                              kernel_regularizer=self._regularizer, recurrent_regularizer=self._regularizer,
-                              bias_regularizer=self._regularizer, dropout=self._dropout,
-                              recurrent_dropout=self._recurrent_dropout)(x_in2)
+                               kernel_regularizer=self._regularizer, recurrent_regularizer=self._regularizer,
+                               bias_regularizer=self._regularizer, dropout=self._dropout,
+                               recurrent_dropout=self._recurrent_dropout)(x_in2)
         if self._pooling == 'avg':
             out2 = GlobalAveragePooling2D()(convlstm2)
         elif self._pooling == 'max':
@@ -2015,11 +2021,10 @@ class MASK_ConvLSTM(ActionPredict):
         else:
             out2 = Flatten(name='flatten')(convlstm2)
 
-######## Later Fusion
+        ######## Later Fusion
         att_enc_out.append(out)
         att_enc_out.append(out2)
         out_final = Concatenate(name='concat_modalities', axis=1)(att_enc_out)
-
 
         _output = Dense(1, activation='sigmoid', name='output_dense')(out_final)
         net_model = Model(inputs=x_in, outputs=_output)
@@ -2033,6 +2038,7 @@ class ATGC(ActionPredict):
     Rasouli et al. "Are they going to cross? A benchmark dataset and baseline
     for pedestrian crosswalk behavior.", ICCVW, 2017.
     """
+
     def __init__(self,
                  dropout=0.0,
                  freeze_conv_layers=False,
@@ -2108,7 +2114,7 @@ class ATGC(ActionPredict):
             for k in d.keys():
                 for i in range(len(d[k])):
                     d[k][i] = d[k][i][- obs_length - time_to_event:-time_to_event]
-            d['tte'] = [[time_to_event]]*len(data_raw['bbox'])
+            d['tte'] = [[time_to_event]] * len(data_raw['bbox'])
 
         else:
             overlap = opts['overlap'] if data_type == 'train' else 0.0
@@ -2171,16 +2177,16 @@ class ATGC(ActionPredict):
                 for bbox in seq:
                     height = bbox[3] - bbox[1]
                     bbox[1] = bbox[1] + height // 2
-            target_dim = (227, 227) if self._backbone == 'alexnet' else (224,224)
+            target_dim = (227, 227) if self._backbone == 'alexnet' else (224, 224)
             data['ped_legs'], feat_shape = self.load_images_crop_and_process(data['image'],
-                                                                 leg_coords,
-                                                                 data['ped_id'],
-                                                                 data_type=data_type,
-                                                                 save_path=path_to_ped_legs,
-                                                                 crop_type='bbox',
-                                                                 crop_mode='warp',
-                                                                 target_dim=target_dim,
-                                                                 process=process)
+                                                                             leg_coords,
+                                                                             data['ped_id'],
+                                                                             data_type=data_type,
+                                                                             save_path=path_to_ped_legs,
+                                                                             crop_type='bbox',
+                                                                             crop_mode='warp',
+                                                                             target_dim=target_dim,
+                                                                             process=process)
 
             data_type_sizes_dict['ped_legs'] = feat_shape
         if 'ped_head' in model_opts['obs_input_type']:
@@ -2189,23 +2195,23 @@ class ATGC(ActionPredict):
             print('#####################################')
 
             path_to_ped_heads, _ = get_path(save_folder='_'.join(['ped_head', aux_name]),
-                                              dataset=dataset,
-                                              save_root_folder='data/features')
+                                            dataset=dataset,
+                                            save_root_folder='data/features')
             head_coords = np.copy(data['box_org'])
             for seq in head_coords:
                 for bbox in seq:
                     height = bbox[3] - bbox[1]
                     bbox[3] = bbox[3] - (height * 2) // 3
-            target_dim = (227, 227) if self._backbone == 'alexnet' else (224,224)
+            target_dim = (227, 227) if self._backbone == 'alexnet' else (224, 224)
             data['ped_head'], feat_shape = self.load_images_crop_and_process(data['image'],
-                                                                 head_coords,
-                                                                 data['ped_id'],
-                                                                 data_type=data_type,
-                                                                 save_path=path_to_ped_heads,
-                                                                 crop_type='bbox',
-                                                                 crop_mode='warp',
-                                                                 target_dim=target_dim,
-                                                                 process=process)
+                                                                             head_coords,
+                                                                             data['ped_id'],
+                                                                             data_type=data_type,
+                                                                             save_path=path_to_ped_heads,
+                                                                             crop_type='bbox',
+                                                                             crop_mode='warp',
+                                                                             target_dim=target_dim,
+                                                                             process=process)
             data_type_sizes_dict['ped_head'] = feat_shape
         if 'scene_context' in model_opts['obs_input_type']:
             print('\n#####################################')
@@ -2216,13 +2222,13 @@ class ATGC(ActionPredict):
                                                 dataset=dataset,
                                                 save_root_folder='data/features')
             data['scene_context'], feat_shape = self.load_images_crop_and_process(data['image'],
-                                                                      data['box_org'],
-                                                                      data['ped_id'],
-                                                                      data_type=data_type,
-                                                                      save_path=path_to_scene_context,
-                                                                      crop_type='none',
-                                                                      target_dim=target_dim,
-                                                                      process=process)
+                                                                                  data['box_org'],
+                                                                                  data['ped_id'],
+                                                                                  data_type=data_type,
+                                                                                  save_path=path_to_scene_context,
+                                                                                  crop_type='none',
+                                                                                  target_dim=target_dim,
+                                                                                  process=process)
             data_type_sizes_dict['scene_context'] = feat_shape
 
         # Reshape the sample tracks by collapsing sequence size to the number of samples
@@ -2233,7 +2239,7 @@ class ATGC(ActionPredict):
                 if self._generator:
                     new_shape = (-1, data[k].shape[-1]) if data[k].ndim > 2 else (-1, 1)
                 else:
-                    new_shape = (-1,) + dsize[1:] if len(dsize) > 3  else (-1, dsize[-1])
+                    new_shape = (-1,) + dsize[1:] if len(dsize) > 3 else (-1, dsize[-1])
                 data[k] = np.reshape(data[k], new_shape)
                 data_type_sizes_dict[k] = dsize[1:]
 
@@ -2257,15 +2263,15 @@ class ATGC(ActionPredict):
             data_inputs = []
             for i, d in enumerate(_data):
                 data_inputs.append(DataGenerator(data=[d],
-                                   labels=data[model_opts['pred_target_type']],
-                                   data_sizes=[data_sizes[i]],
-                                   process=process,
-                                   global_pooling=self._global_pooling,
-                                   input_type_list=[model_opts['obs_input_type'][i]],
-                                   batch_size=model_opts['batch_size'],
-                                   shuffle=is_train_data,
-                                   to_fit=is_train_data))
-            _data = (data_inputs, data[model_opts['pred_target_type']]) # set y to None
+                                                 labels=data[model_opts['pred_target_type']],
+                                                 data_sizes=[data_sizes[i]],
+                                                 process=process,
+                                                 global_pooling=self._global_pooling,
+                                                 input_type_list=[model_opts['obs_input_type'][i]],
+                                                 batch_size=model_opts['batch_size'],
+                                                 shuffle=is_train_data,
+                                                 to_fit=is_train_data))
+            _data = (data_inputs, data[model_opts['pred_target_type']])  # set y to None
         else:
             _data = (_data, data[model_opts['pred_target_type']])
 
@@ -2303,8 +2309,6 @@ class ATGC(ActionPredict):
                                       epochs=epochs,
                                       model_opts=model_opts)
 
-
-
         model_opts['obs_input_type'] = ['scene_context']
         model_opts['pred_target_type'] = 'scene'
         scene_model = self.train_model(data_train, data_val,
@@ -2326,7 +2330,7 @@ class ATGC(ActionPredict):
                     optimizer='sgd',
                     loss_func='sparse_categorical_crossentropy',
                     activation='sigmoid',
-                    learning_scheduler =None,
+                    learning_scheduler=None,
                     model_opts=None):
         """
         Trains a single model
@@ -2437,9 +2441,9 @@ class ATGC(ActionPredict):
         walking_features = walk_model.predict(data_train['data'][0][1], verbose=1)
 
         scene_model = self.get_model({'data_sizes': [data_train['data_params']['data_sizes'][2]],
-                                     'weights': model_opts['model_paths']['scene'], 'features': True,
+                                      'weights': model_opts['model_paths']['scene'], 'features': True,
                                       'num_classes': 7})
-        scene_features = scene_model.predict(data_train['data'][0][2],  verbose=1)
+        scene_features = scene_model.predict(data_train['data'][0][2], verbose=1)
 
         svm_features = np.concatenate([looking_features, walking_features, scene_features], axis=-1)
 
@@ -2461,19 +2465,17 @@ class ATGC(ActionPredict):
 
         return saved_files_path
 
-
     def get_model(self, data_params):
         K.clear_session()
         net_model = self._conv_models[self._backbone](input_shape=data_params['data_sizes'][0],
-                            include_top=False, weights=self._weights)
+                                                      include_top=False, weights=self._weights)
 
         # Convert to fully connected
         net_model = convert_to_fcn(net_model, classes=data_params.get('num_classes', 2),
-                       activation=data_params.get('activation', 'softmax'),
-                       pooling=self._pooling, features=data_params.get('features', False))
+                                   activation=data_params.get('activation', 'softmax'),
+                                   pooling=self._pooling, features=data_params.get('features', False))
         net_model.summary()
         return net_model
-
 
     def test(self, data_test, model_path=''):
         """
@@ -2549,6 +2551,7 @@ class TwoStream(ActionPredict):
     Simonyan et al. "Two-stream convolutional networks for action recognition
     in videos.", NeurIPS, 2014.
     """
+
     def __init__(self,
                  dropout=0.0,
                  dense_activation='sigmoid',
@@ -2576,7 +2579,7 @@ class TwoStream(ActionPredict):
         self._num_classes = num_classes
         if backbone != 'vgg16':
             print("Only vgg16 backbone is supported")
-            backbone ='vgg16'
+            backbone = 'vgg16'
         self._backbone = backbone
         self._conv_model = vgg16.VGG16
 
@@ -2604,7 +2607,7 @@ class TwoStream(ActionPredict):
             for k in d.keys():
                 for i in range(len(d[k])):
                     d[k][i] = d[k][i][- obs_length - time_to_event:-time_to_event]
-            d['tte'] = [[time_to_event]]*len(data_raw['bbox'])
+            d['tte'] = [[time_to_event]] * len(data_raw['bbox'])
         else:
             overlap = opts['overlap'] if data_type == 'train' else 0.0
             olap_res = obs_length if overlap == 0 else int((1 - overlap) * obs_length)
@@ -2622,7 +2625,7 @@ class TwoStream(ActionPredict):
                 start_idx = len(seq) - obs_length - time_to_event[1]
                 end_idx = len(seq) - obs_length - time_to_event[0]
                 d['tte'].extend([[len(seq) - (i + obs_length)] for i in
-                                range(start_idx, end_idx + 1, olap_res)])
+                                 range(start_idx, end_idx + 1, olap_res)])
         for k in d.keys():
             d[k] = np.array(d[k])
 
@@ -2665,8 +2668,8 @@ class TwoStream(ActionPredict):
         print('#####################################')
 
         save_folder_name = '_'.join([feature_type, aux_name, str(eratio)]) \
-                           if feature_type in ['local_context', 'local_surround'] \
-                           else '_'.join([feature_type, aux_name])
+            if feature_type in ['local_context', 'local_surround'] \
+            else '_'.join([feature_type, aux_name])
         path_to_features, _ = get_path(save_folder=save_folder_name,
                                        dataset=dataset,
                                        save_root_folder='data/features')
@@ -2681,11 +2684,12 @@ class TwoStream(ActionPredict):
         _data_samples['crossing'] = _data_samples['crossing'][:, stidx:-endidx, ...]
         effective_dimension = _data_samples['crossing'].shape[1]
 
-        _data_samples[feature_type], feat_shape = self.load_images_crop_and_process(data['image'][:, stidx:-endidx, ...],
-                                                                                    data['box_org'][:, stidx:-endidx, ...],
-                                                                                    data['ped_id'][:, stidx:-endidx, ...],
-                                                                                    process=process,
-                                                                                    **data_gen_params)
+        _data_samples[feature_type], feat_shape = self.load_images_crop_and_process(
+            data['image'][:, stidx:-endidx, ...],
+            data['box_org'][:, stidx:-endidx, ...],
+            data['ped_id'][:, stidx:-endidx, ...],
+            process=process,
+            **data_gen_params)
         data_type_sizes_dict[feature_type] = feat_shape
 
         print('\n#####################################')
@@ -2693,7 +2697,7 @@ class TwoStream(ActionPredict):
         print('#####################################')
 
         save_folder_name = '_'.join([feature_type, 'flow', str(eratio)]) \
-                           if feature_type == 'local_context' else '_'.join([feature_type, 'flow'])
+            if feature_type == 'local_context' else '_'.join([feature_type, 'flow'])
         path_to_features, _ = get_path(save_folder=save_folder_name,
                                        dataset=dataset,
                                        save_root_folder='data/features')
@@ -2709,12 +2713,12 @@ class TwoStream(ActionPredict):
             _data_samples['optical_flow'] = np.expand_dims(_data_samples['optical_flow'], axis=-1)
 
         for sample in _data_samples['optical_flow']:
-            opf = [np.concatenate(sample[i:i+ofl, ...], axis=-1) for i in range(sample.shape[0] - ofl + 1)]
+            opf = [np.concatenate(sample[i:i + ofl, ...], axis=-1) for i in range(sample.shape[0] - ofl + 1)]
             opt_flow.append(opf)
         _data_samples['optical_flow'] = np.array(opt_flow)
         if self._generator:
             data_type_sizes_dict['optical_flow'] = (feat_shape[0] - ofl + 1,
-                                                    *feat_shape[1:3], feat_shape[3]*ofl)
+                                                    *feat_shape[1:3], feat_shape[3] * ofl)
         else:
             data_type_sizes_dict['optical_flow'] = _data_samples['optical_flow'].shape[1:]
 
@@ -2730,24 +2734,24 @@ class TwoStream(ActionPredict):
         # create the final data file to be returned
         if self._generator:
             _data_rgb = (DataGenerator(data=[_data_samples[feature_type]],
-                                   labels=_data_samples['crossing'],
-                                   data_sizes=[data_type_sizes_dict[feature_type]],
-                                   process=process,
-                                   global_pooling=self._global_pooling,
-                                   input_type_list=model_opts['obs_input_type'],
-                                   batch_size=model_opts['batch_size'],
-                                   shuffle=data_type != 'test',
-                                   to_fit=data_type != 'test'), _data_samples['crossing'])  # set y to None
+                                       labels=_data_samples['crossing'],
+                                       data_sizes=[data_type_sizes_dict[feature_type]],
+                                       process=process,
+                                       global_pooling=self._global_pooling,
+                                       input_type_list=model_opts['obs_input_type'],
+                                       batch_size=model_opts['batch_size'],
+                                       shuffle=data_type != 'test',
+                                       to_fit=data_type != 'test'), _data_samples['crossing'])  # set y to None
             _data_opt_flow = (DataGenerator(data=[_data_samples['optical_flow']],
-                                   labels=_data_samples['crossing'],
-                                   data_sizes=[data_type_sizes_dict['optical_flow']],
-                                   process=process,
-                                   global_pooling=self._global_pooling,
-                                   input_type_list=['optical_flow'],
-                                   batch_size=model_opts['batch_size'],
-                                   shuffle=data_type != 'test',
-                                   to_fit=data_type != 'test',
-                                   stack_feats=True), _data_samples['crossing'])  # set y to None
+                                            labels=_data_samples['crossing'],
+                                            data_sizes=[data_type_sizes_dict['optical_flow']],
+                                            process=process,
+                                            global_pooling=self._global_pooling,
+                                            input_type_list=['optical_flow'],
+                                            batch_size=model_opts['batch_size'],
+                                            shuffle=data_type != 'test',
+                                            to_fit=data_type != 'test',
+                                            stack_feats=True), _data_samples['crossing'])  # set y to None
         else:
             _data_rgb = (_data_samples[feature_type], _data_samples['crossing'])
             _data_opt_flow = (_data_samples['optical_flow'], _data_samples['crossing'])
@@ -2841,7 +2845,6 @@ class TwoStream(ActionPredict):
 
         return saved_files_path
 
-
     def train_model(self, model_type, data_train, data_val,
                     class_w, learning_scheduler, path_params, optimizer,
                     batch_size, epochs, lr, **kwargs):
@@ -2865,7 +2868,7 @@ class TwoStream(ActionPredict):
 
         data_path_params = {**path_params, 'sub_folder': model_type}
         model_path, _ = get_path(**data_path_params, file_name='model.h5')
-        callbacks = self.get_callbacks(learning_scheduler,model_path)
+        callbacks = self.get_callbacks(learning_scheduler, model_path)
 
         if data_val:
             data_val = data_val['data_' + model_type]
@@ -2955,7 +2958,7 @@ class TwoStreamFusion(ActionPredict):
                  dense_activation='sigmoid',
                  freeze_conv_layers=True,
                  weights='imagenet',
-                 fusion_point='early', # early, late, two-stage
+                 fusion_point='early',  # early, late, two-stage
                  fusion_method='sum',
                  num_classes=1,
                  backbone='vgg16',
@@ -2979,10 +2982,10 @@ class TwoStreamFusion(ActionPredict):
         super().__init__(**kwargs)
         # Network parameters
         assert fusion_point in ['early', 'late', 'two-stage'], \
-        "fusion point {} is not supported".format(fusion_point)
+            "fusion point {} is not supported".format(fusion_point)
 
         assert fusion_method in ['sum', 'conv'], \
-        "fusion method {} is not supported".format(fusion_method)
+            "fusion method {} is not supported".format(fusion_method)
 
         self._dropout = dropout
         self._dense_activation = dense_activation
@@ -3017,7 +3020,7 @@ class TwoStreamFusion(ActionPredict):
             for k in d.keys():
                 for i in range(len(d[k])):
                     d[k][i] = d[k][i][- obs_length - time_to_event:-time_to_event]
-            d['tte'] = [[time_to_event]]*len(data_raw['bbox'])
+            d['tte'] = [[time_to_event]] * len(data_raw['bbox'])
 
         else:
             overlap = opts['overlap'] if data_type == 'train' else 0.0
@@ -3036,7 +3039,7 @@ class TwoStreamFusion(ActionPredict):
                 start_idx = len(seq) - obs_length - time_to_event[1]
                 end_idx = len(seq) - obs_length - time_to_event[0]
                 d['tte'].extend([[len(seq) - (i + obs_length)] for i in
-                                range(start_idx, end_idx + 1, olap_res)])
+                                 range(start_idx, end_idx + 1, olap_res)])
         for k in d.keys():
             d[k] = np.array(d[k])
 
@@ -3078,8 +3081,8 @@ class TwoStreamFusion(ActionPredict):
         print('#####################################')
 
         save_folder_name = '_'.join([feature_type, aux_name, str(eratio)]) \
-                           if feature_type in ['local_context', 'local_surround'] \
-                           else '_'.join([feature_type, aux_name])
+            if feature_type in ['local_context', 'local_surround'] \
+            else '_'.join([feature_type, aux_name])
 
         path_to_features, _ = get_path(save_folder=save_folder_name,
                                        dataset=dataset,
@@ -3096,20 +3099,20 @@ class TwoStreamFusion(ActionPredict):
         _data_samples['crossing'] = _data_samples['crossing'][:, stidx:-endidx, ...]
         effective_dimension = _data_samples['crossing'].shape[1]
 
-        _data_samples[feature_type], feat_shape = self.load_images_crop_and_process(data['image'][:, stidx:-endidx, ...],
-                                                                                    data['box_org'][:, stidx:-endidx, ...],
-                                                                                    data['ped_id'][:, stidx:-endidx, ...],
-                                                                                    process=process,
-                                                                                    **data_gen_params)
+        _data_samples[feature_type], feat_shape = self.load_images_crop_and_process(
+            data['image'][:, stidx:-endidx, ...],
+            data['box_org'][:, stidx:-endidx, ...],
+            data['ped_id'][:, stidx:-endidx, ...],
+            process=process,
+            **data_gen_params)
         data_type_sizes_dict[feature_type] = feat_shape
-
 
         print('\n#####################################')
         print('Generating {} optical flow {}'.format(feature_type, data_type))
         print('#####################################')
-        save_folder_name = '_'.join([feature_type, 'flow',  str(eratio)]) \
-                                    if feature_type in ['local_context', 'local_surround'] \
-                                    else '_'.join([feature_type, 'flow'])
+        save_folder_name = '_'.join([feature_type, 'flow', str(eratio)]) \
+            if feature_type in ['local_context', 'local_surround'] \
+            else '_'.join([feature_type, 'flow'])
 
         path_to_features, _ = get_path(save_folder=save_folder_name,
                                        dataset=dataset,
@@ -3158,12 +3161,12 @@ class TwoStreamFusion(ActionPredict):
                                    data_sizes=data_sizes,
                                    process=process,
                                    global_pooling=self._global_pooling,
-                                   input_type_list=[feature_type,'optical_flow'],
+                                   input_type_list=[feature_type, 'optical_flow'],
                                    batch_size=model_opts['batch_size'],
                                    shuffle=data_type != 'test',
                                    to_fit=data_type != 'test',
                                    stack_feats=True),
-                                   _data_samples['crossing'])
+                     _data_samples['crossing'])
         else:
             _data = (_data, _data_samples['crossing'])
 
@@ -3191,7 +3194,7 @@ class TwoStreamFusion(ActionPredict):
             concat_layer = Concatenate()([l1, l2])
             return Conv2D(l2.shape[-1], 1, 1)(concat_layer)
 
-    def add_dropout(self, model, add_new_pred = False):
+    def add_dropout(self, model, add_new_pred=False):
         """
         Adds dropout layers to a given vgg16 network. If specified, changes the dimension of
         the last layer (predictions)
@@ -3275,7 +3278,7 @@ class TwoStreamFusion(ActionPredict):
     def get_model(self, data_params):
         data_size = data_params['data_sizes'][0]
         rgb_model = self._conv_models(input_shape=data_size,
-                                          include_top=True, weights=self._weights)
+                                      include_top=True, weights=self._weights)
         rgb_model = self.add_dropout(rgb_model, add_new_pred=True)
         data_size = data_params['data_sizes'][1]
         temporal_model = self._conv_models(input_shape=data_size,
@@ -3303,7 +3306,7 @@ class TwoStreamFusion(ActionPredict):
                 if start_fusion:
                     x = layer(x)
                 else:
-                   layer.trainable = False
+                    layer.trainable = False
 
             output = x
 
@@ -3319,7 +3322,7 @@ class TwoStreamFusion(ActionPredict):
                 if start_fusion:
                     x = layer(x)
                 else:
-                   layer.trainable = False
+                    layer.trainable = False
 
             output = Average()([x, rgb_model.output])
 
@@ -3357,7 +3360,7 @@ class TwoStreamFusion(ActionPredict):
         pre_recall = precision_recall_curve(gt, results)
 
         print('acc:{:.2f} auc:{:0.2f} f1:{:0.2f} precision:{:0.2f} recall:{:0.2f}'.format(acc, auc, f1, precision,
-                                                                                  recall))
+                                                                                          recall))
 
         save_results_path = os.path.join(model_path, '{:.2f}'.format(acc) + '.yaml')
 
@@ -3387,21 +3390,21 @@ def attention_3d_block(hidden_states, dense_size=128, modality=''):
     #              hidden_states            dot               W            =>           score_first_part
     # (batch_size, time_steps, hidden_size) dot (hidden_size, hidden_size) => (batch_size, time_steps, hidden_size)
     # W is the trainable weight matrix of attention Luong's multiplicative style score
-    score_first_part = Dense(hidden_size, use_bias=False, name='attention_score_vec'+modality)(hidden_states)
+    score_first_part = Dense(hidden_size, use_bias=False, name='attention_score_vec' + modality)(hidden_states)
     #            score_first_part           dot        last_hidden_state     => attention_weights
     # (batch_size, time_steps, hidden_size) dot   (batch_size, hidden_size)  => (batch_size, time_steps)
-    h_t = Lambda(lambda x: x[:, -1, :], output_shape=(hidden_size,), name='last_hidden_state'+modality)(hidden_states)
-    score = dot([score_first_part, h_t], [2, 1], name='attention_score'+modality)
-    attention_weights = Activation('softmax', name='attention_weight'+modality)(score)
+    h_t = Lambda(lambda x: x[:, -1, :], output_shape=(hidden_size,), name='last_hidden_state' + modality)(hidden_states)
+    score = dot([score_first_part, h_t], [2, 1], name='attention_score' + modality)
+    attention_weights = Activation('softmax', name='attention_weight' + modality)(score)
     # (batch_size, time_steps, hidden_size) dot (batch_size, time_steps) => (batch_size, hidden_size)
-    context_vector = dot([hidden_states, attention_weights], [1, 1], name='context_vector'+modality)
-    pre_activation = concatenate([context_vector, h_t], name='attention_output'+modality)
-    attention_vector = Dense(dense_size, use_bias=False, activation='tanh', name='attention_vector'+modality)(pre_activation)
+    context_vector = dot([hidden_states, attention_weights], [1, 1], name='context_vector' + modality)
+    pre_activation = concatenate([context_vector, h_t], name='attention_output' + modality)
+    attention_vector = Dense(dense_size, use_bias=False, activation='tanh', name='attention_vector' + modality)(
+        pre_activation)
     return attention_vector
 
 
 class MASK_PCPA(ActionPredict):
-
     """
 
     MASK_PCPA: pedestrian crossing prediction combining local context with global context
@@ -3409,7 +3412,7 @@ class MASK_PCPA(ActionPredict):
     later fusion
 
     """
-    
+
     def __init__(self,
                  num_hidden_units=256,
                  cell_type='gru',
@@ -3483,7 +3486,7 @@ class MASK_PCPA(ActionPredict):
                                    input_type_list=model_opts['obs_input_type'],
                                    batch_size=model_opts['batch_size'],
                                    shuffle=data_type != 'test',
-                                   to_fit=data_type != 'test'), data['crossing']) # set y to None
+                                   to_fit=data_type != 'test'), data['crossing'])  # set y to None
         else:
             _data = (_data, data['crossing'])
 
@@ -3511,17 +3514,16 @@ class MASK_PCPA(ActionPredict):
 
         if self._backbone == 'i3d':
             x = Flatten(name='flatten_output')(conv3d_model.output)
-            x = Dense(name='emb_'+self._backbone,
-                       units=attention_size,
-                       activation='sigmoid')(x)
+            x = Dense(name='emb_' + self._backbone,
+                      units=attention_size,
+                      activation='sigmoid')(x)
         else:
             x = conv3d_model.output
-            x = Dense(name='emb_'+self._backbone,
-                       units=attention_size,
-                       activation='sigmoid')(x)
+            x = Dense(name='emb_' + self._backbone,
+                      units=attention_size,
+                      activation='sigmoid')(x)
 
         encoder_outputs.append(x)
-
 
         # image features from mask
 
@@ -3553,17 +3555,18 @@ class MASK_PCPA(ActionPredict):
 
         for i in range(2, core_size):
             network_inputs.append(Input(shape=data_sizes[i], name='input_' + data_types[i]))
-            encoder_outputs.append(self._rnn(name='enc_' + data_types[i], r_sequence=return_sequence)(network_inputs[i]))
+            encoder_outputs.append(
+                self._rnn(name='enc_' + data_types[i], r_sequence=return_sequence)(network_inputs[i]))
 
         if len(encoder_outputs) > 1:
             att_enc_out = []
             x = Lambda(lambda x: K.expand_dims(x, axis=1))(encoder_outputs[0])
-            att_enc_out.append(x) # first output is from 3d conv netwrok
+            att_enc_out.append(x)  # first output is from 3d conv netwrok
             x = Lambda(lambda x: K.expand_dims(x, axis=1))(encoder_outputs[1])
-            att_enc_out.append(x) # second output is from 3d conv netwrok
+            att_enc_out.append(x)  # second output is from 3d conv netwrok
             # for recurrent branches apply many-to-one attention block
             for i, enc_out in enumerate(encoder_outputs[2:]):
-                x = attention_3d_block(enc_out, dense_size=attention_size, modality='_'+data_types[i])
+                x = attention_3d_block(enc_out, dense_size=attention_size, modality='_' + data_types[i])
                 x = Dropout(0.5)(x)
                 x = Lambda(lambda x: K.expand_dims(x, axis=1))(x)
                 att_enc_out.append(x)
@@ -3571,8 +3574,8 @@ class MASK_PCPA(ActionPredict):
             x = Concatenate(name='concat_modalities', axis=1)(att_enc_out)
             encodings = attention_3d_block(x, dense_size=attention_size, modality='_modality')
 
-            #print(encodings.shape)
-            #print(weights_softmax.shape)
+            # print(encodings.shape)
+            # print(weights_softmax.shape)
         else:
             encodings = encoder_outputs[0]
 
@@ -3940,14 +3943,13 @@ class MASK_PCPA_3(ActionPredict):
             # network_inputs[i] = tf.cast(network_inputs[i], tf.int32, name='input_int32'+ data_types[i])
             # result = tf.nn.conv2d(network_inputs[i], 3, [1,1,1,1],'SAME')
 
-
         x = self._rnn(name='enc_' + data_types[2], r_sequence=return_sequence)(network_inputs[2])
         # hierfusion=x
-        current = [x,network_inputs[3]]
+        current = [x, network_inputs[3]]
         x = Concatenate(name='concat_early1', axis=2)(current)
         x = self._rnn(name='enc1_' + data_types[3], r_sequence=return_sequence)(x)
         # hierfusion.append(x)
-        current = [x,network_inputs[4]]
+        current = [x, network_inputs[4]]
         x = Concatenate(name='concat_early2', axis=2)(current)
         x = self._rnn(name='enc2_' + data_types[4], r_sequence=return_sequence)(x)
         encoder_outputs.append(x)
@@ -3991,7 +3993,8 @@ class MASK_PCPA_3(ActionPredict):
         plot_model(net_model, to_file='MASK_PCPA_3.png')
         return net_model
 
-class  MASK_C3D(ActionPredict):
+
+class MASK_C3D(ActionPredict):
     """
 
     MASK_C3D: pedestrian crossing prediction combining local context with mask
@@ -4179,7 +4182,8 @@ class  MASK_C3D(ActionPredict):
         plot_model(net_model, to_file='MASK_C3D.png')
         return net_model
 
-class  ORI_C3D(ActionPredict):
+
+class ORI_C3D(ActionPredict):
     """
 
     ORI_C3D: pedestrian crossing prediction using original C3D
@@ -4370,7 +4374,6 @@ class  ORI_C3D(ActionPredict):
 
 
 class PCPA(ActionPredict):
-
     """
     Class init function
 
@@ -4526,8 +4529,8 @@ class PCPA(ActionPredict):
         # plot_model(net_model, to_file='MultiRNN3D_ATT.png')
         return net_model
 
-class PCPA_2D(ActionPredict):
 
+class PCPA_2D(ActionPredict):
     """
     Class init function
 
@@ -4683,7 +4686,6 @@ class PCPA_2D(ActionPredict):
         #                name='output_dense')(context_net.outputs[0])
         # net_model = Model(inputs=context_net.inputs[0], outputs=output)
 
-
         for i in range(1, core_size):
             network_inputs.append(Input(shape=data_sizes[i], name='input_' + data_types[i]))
             encoder_outputs.append(
@@ -4721,8 +4723,8 @@ class PCPA_2D(ActionPredict):
         plot_model(net_model, to_file='PCPA_2D.png')
         return net_model
 
-class MASK_PCPA_2D(ActionPredict):
 
+class MASK_PCPA_2D(ActionPredict):
     """
     Class init function
 
@@ -4882,7 +4884,6 @@ class MASK_PCPA_2D(ActionPredict):
         #                name='output_dense')(context_net.outputs[0])
         # net_model = Model(inputs=context_net.inputs[0], outputs=output)
 
-
         for i in range(2, core_size):
             network_inputs.append(Input(shape=data_sizes[i], name='input_' + data_types[i]))
             encoder_outputs.append(
@@ -4920,8 +4921,8 @@ class MASK_PCPA_2D(ActionPredict):
         plot_model(net_model, to_file='MASK_PCPA_2D.png')
         return net_model
 
-class MASK_PCPA_2_2D(ActionPredict):
 
+class MASK_PCPA_2_2D(ActionPredict):
     """
     early fusion of MASK_PCPA
 
@@ -5115,8 +5116,6 @@ class MASK_PCPA_2_2D(ActionPredict):
         encodings = encoder_outputs[0]
         encodings = attention_3d_block(encodings, dense_size=attention_size, modality='_modality')
 
-
-
         # for i in range(2, core_size):
         #     network_inputs.append(Input(shape=data_sizes[i], name='input_' + data_types[i]))
         #     encoder_outputs.append(
@@ -5139,8 +5138,8 @@ class MASK_PCPA_2_2D(ActionPredict):
         #     x = Concatenate(name='concat_modalities', axis=1)(att_enc_out)
         #     encodings = attention_3d_block(x, dense_size=attention_size, modality='_modality')
 
-            # print(encodings.shape)
-            # print(weights_softmax.shape)
+        # print(encodings.shape)
+        # print(weights_softmax.shape)
         # else:
         #     encodings = encoder_outputs[0]
 
@@ -5155,9 +5154,7 @@ class MASK_PCPA_2_2D(ActionPredict):
         return net_model
 
 
-
 class MASK_PCPA_3_2D(ActionPredict):
-
     """
     hierfusion MASK_PCPA
     Class init function
@@ -5318,7 +5315,6 @@ class MASK_PCPA_3_2D(ActionPredict):
         #                name='output_dense')(context_net.outputs[0])
         # net_model = Model(inputs=context_net.inputs[0], outputs=output)
 
-
         # for i in range(2, core_size):
         #     network_inputs.append(Input(shape=data_sizes[i], name='input_' + data_types[i]))
         #     encoder_outputs.append(
@@ -5339,12 +5335,10 @@ class MASK_PCPA_3_2D(ActionPredict):
         current = [x, network_inputs[3]]
         x = Concatenate(name='concat_early3', axis=2)(current)
         x = self._rnn(name='enc3_' + data_types[3], r_sequence=return_sequence)(x)
-        current = [x,network_inputs[4]]
+        current = [x, network_inputs[4]]
         x = Concatenate(name='concat_early4', axis=2)(current)
         x = self._rnn(name='enc4_' + data_types[4], r_sequence=return_sequence)(x)
         encoder_outputs.append(x)
-
-
 
         if len(encoder_outputs) > 1:
             att_enc_out = []
@@ -5381,7 +5375,6 @@ class MASK_PCPA_3_2D(ActionPredict):
 
 
 class MASK_PCPA_4_2D(ActionPredict):
-
     """
     hierfusion MASK_PCPA
     Class init function
@@ -5522,12 +5515,10 @@ class MASK_PCPA_4_2D(ActionPredict):
         current = [x, network_inputs[3]]
         x = Concatenate(name='concat_early3', axis=2)(current)
         x = self._rnn(name='enc3_' + data_types[3], r_sequence=return_sequence)(x)
-        current = [x,network_inputs[4]]
+        current = [x, network_inputs[4]]
         x = Concatenate(name='concat_early4', axis=2)(current)
         x = self._rnn(name='enc4_' + data_types[4], r_sequence=return_sequence)(x)
         encoder_outputs.append(x)
-
-
 
         if len(encoder_outputs) > 1:
             att_enc_out = []
@@ -5558,7 +5549,6 @@ class MASK_PCPA_4_2D(ActionPredict):
         return net_model
 
 
-
 def action_prediction(model_name):
     for cls in ActionPredict.__subclasses__():
         if cls.__name__ == model_name:
@@ -5584,7 +5574,7 @@ class DataGenerator(Sequence):
         self.process = process
         self.global_pooling = global_pooling
         self.input_type_list = input_type_list
-        self.batch_size = 1 if len(self.labels) < batch_size  else batch_size        
+        self.batch_size = 1 if len(self.labels) < batch_size else batch_size
         self.data_sizes = data_sizes
         self.shuffle = shuffle
         self.to_fit = to_fit
@@ -5593,7 +5583,7 @@ class DataGenerator(Sequence):
         self.on_epoch_end()
 
     def __len__(self):
-        return int(np.floor(len(self.data[0])/self.batch_size))
+        return int(np.floor(len(self.data[0]) / self.batch_size))
 
     def on_epoch_end(self):
         self.indices = np.arange(len(self.data[0]))
@@ -5601,7 +5591,7 @@ class DataGenerator(Sequence):
             np.random.shuffle(self.indices)
 
     def __getitem__(self, index):
-        indices = self.indices[index*self.batch_size: (index+1)*self.batch_size]
+        indices = self.indices[index * self.batch_size: (index + 1) * self.batch_size]
 
         X = self._generate_X(indices)
         if self.to_fit:
@@ -5626,14 +5616,14 @@ class DataGenerator(Sequence):
                 img_features = np.average(img_features, axis=0)
                 img_features = np.average(img_features, axis=0)
             else:
-                img_features = img_features.ravel()        
+                img_features = img_features.ravel()
         return img_features
 
     def _generate_X(self, indices):
         X = []
         for input_type_idx, input_type in enumerate(self.input_type_list):
             features_batch = np.empty((self.batch_size, *self.data_sizes[input_type_idx]))
-            num_ch = features_batch.shape[-1]//len(self.data[input_type_idx][0])
+            num_ch = features_batch.shape[-1] // len(self.data[input_type_idx][0])
             for i, index in enumerate(indices):
                 if isinstance(self.data[input_type_idx][index][0], str):
                     cached_path_list = self.data[input_type_idx][index]
@@ -5645,17 +5635,16 @@ class DataGenerator(Sequence):
 
                         if len(cached_path_list) == 1:
                             # for static model if only one image in the sequence
-                            features_batch[i, ] = img_features
+                            features_batch[i,] = img_features
                         else:
                             if self.stack_feats and 'flow' in input_type:
-                                features_batch[i,...,j*num_ch:j*num_ch+num_ch] = img_features
+                                features_batch[i, ..., j * num_ch:j * num_ch + num_ch] = img_features
                             else:
-                                features_batch[i, j, ] = img_features
+                                features_batch[i, j,] = img_features
                 else:
-                    features_batch[i, ] = self.data[input_type_idx][index]
+                    features_batch[i,] = self.data[input_type_idx][index]
             X.append(features_batch)
         return X
 
     def _generate_y(self, indices):
         return np.array(self.labels[indices])
-
