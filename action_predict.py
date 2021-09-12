@@ -2,6 +2,7 @@ import time
 import yaml
 import wget
 import cv2
+from pathlib import PurePath
 from utils import *
 from base_models import AlexNet, C3DNet, convert_to_fcn, C3DNet2
 from base_models import I3DNet
@@ -311,9 +312,8 @@ class ActionPredict(object):
             img_seq = []
             for imp, b, p in zip(seq, bbox_seq[i], pid):
                 flip_image = False
-                set_id = imp.split('/')[-3]
-                vid_id = imp.split('/')[-2]
-                img_name = imp.split('/')[-1].split('.')[0]
+                set_id, vid_id, img_name = PurePath(imp).parts[-3:]
+                img_name = img_name.split('.')[0]
                 img_save_folder = os.path.join(save_path, set_id, vid_id)
 
                 # Modify the path depending on crop mode
@@ -546,9 +546,8 @@ class ActionPredict(object):
             flow_seq = []
             for imp, b, p in zip(seq, bbox_seq[i], pid):
                 flip_image = False
-                set_id = imp.split('/')[-3]
-                vid_id = imp.split('/')[-2]
-                img_name = imp.split('/')[-1].split('.')[0]
+                set_id, vid_id, img_name = PurePath(imp)[-3:]
+                set_id = set_id.split('.')[0]
                 optflow_save_folder = os.path.join(save_path, set_id, vid_id)
                 ofp = imp.replace('images', 'optical_flow').replace('png', 'flo')
                 # Modify the path depending on crop mode
