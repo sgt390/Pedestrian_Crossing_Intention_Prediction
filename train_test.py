@@ -24,7 +24,7 @@ if tf.test.is_gpu_available():
         tf.config.experimental.set_memory_growth(gpu, True)
         tf.config.experimental.set_virtual_device_configuration(
             gpu,
-            [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024)]
+            [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024)] # TODO changed from 4096 for testing
         )
 else:
     print('No GPU available, using CPU')
