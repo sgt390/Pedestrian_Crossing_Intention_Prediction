@@ -14,6 +14,6 @@ exp_opts:
   datasets: [jaad_all]
   batch_size: [1,1]
   epochs: [3,3]
-  lr: [5.0e-07]
+  lr: [5.0e-07, 5.0e-07]
 data_opts:
   min_track_size: 16 # tracks shorter than this length will be discarded
