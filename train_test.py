@@ -149,6 +149,9 @@ def run(config_file=None):
         method_class = action_prediction(configs['model_opts']['model'])(**configs['net_opts'])
 
         # train and save the model
+        # delete next two lines todo
+        print('--------------train opts: ',configs['train_opts'])
+        print('---------------model opts:',configs['model_opts'])
         saved_files_path = method_class.train(beh_seq_train, beh_seq_val, **configs['train_opts'],
                                               model_opts=configs['model_opts'])
         # test and evaluate the model
