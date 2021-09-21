@@ -4,13 +4,16 @@ import os
 import pickle
 import numpy as np
 import cv2
+from pathlib import PurePath
 from tensorflow.keras.preprocessing.image import load_img
 from sklearn.metrics import accuracy_score
+
 
 # Data utilities
 def flip_pose(pose):
     """
     Flips a given pose coordinates
+
     Args:
         pose: The original pose
     Return:
@@ -18,34 +21,34 @@ def flip_pose(pose):
     """
     # [nose(0,1), neck(2,3), Rsho(4,5),   Relb(6,7),   Rwri(8,9),
     # 						 Lsho(10,11), Lelb(12,13), Lwri(14,15),
-    #						 Rhip(16,17), Rkne(18,19), Rank(20,21),
+    #                        Rhip(16,17), Rkne(18,19), Rank(20,21),
     #                        Lhip(22,23), Lkne(24,25), Lank(26,27),
-    #						 Leye(28,29), Reye (30,31),
-    #						 Lear(32,33), Rear(34,35)]
+    #                        Leye(28,29), Reye (30,31),
+    #                        Lear(32,33), Rear(34,35)]
     flip_map = [0, 1, 2, 3, 10, 11, 12, 13, 14, 15, 4, 5, 6, 7, 8, 9, 22, 23, 24, 25,
                 26, 27, 16, 17, 18, 19, 20, 21, 30, 31, 28, 29, 34, 35, 32, 33]
     new_pose = pose.copy()
-    flip_pose = [0] * len(new_pose)
+    flip_pose_ = [0] * len(new_pose)
     for i in range(len(new_pose)):
         if i % 2 == 0 and new_pose[i] != 0:
             new_pose[i] = 1 - new_pose[i]
-        flip_pose[flip_map[i]] = new_pose[i]
-    return flip_pose
+        flip_pose_[flip_map[i]] = new_pose[i]
+    return flip_pose_
 
 
-def get_pose(img_sequences,
-             ped_ids, file_path,
-             data_type='train',
-             dataset='pie'):
+def get_pose(img_sequences, ped_ids, file_path, data_type='train', dataset='pie'):
     """
     Reads the pie poses from saved .pkl files
+
     Args:
         img_sequences: Sequences of image names
         ped_ids: Sequences of pedestrian ids
         file_path: Path to where poses are saved
         data_type: Whether it is for training or testing
+        dataset: pie or jaad
     Return:
          Sequences of poses
+
     """
 
     print('\n#####################################')
@@ -68,14 +71,16 @@ def get_pose(img_sequences,
         pose = []
         for imp, p in zip(seq, pid):
             flip_image = False
-            
+
             if dataset == 'pie':
-                set_id = imp.split('/')[-3]
-            elif dataset == 'jaad':
+                set_id = PurePath(imp).parts[-3]
+            else:  # dataset == 'jaad':
                 set_id = 'set01'
-            
-            vid_id = imp.split('/')[-2]
-            img_name = imp.split('/')[-1].split('.')[0]
+
+            # vid_id = imp.split('/')[-2]
+            vid_id = PurePath(imp).parts[-2]
+
+            img_name = PurePath(imp).parts[-1].split('.')[0]
             if 'flip' in img_name:
                 img_name = img_name.replace('_flip', '')
                 flip_image = True
@@ -97,6 +102,7 @@ def get_pose(img_sequences,
 def jitter_bbox(img_path, bbox, mode, ratio):
     """
     Jitters the position or dimensions of the bounding box.
+
     Args:
         img_path: The to the image
         bbox: The bounding box to be jittered
@@ -168,6 +174,7 @@ def jitter_bbox(img_path, bbox, mode, ratio):
 def squarify(bbox, squarify_ratio, img_width):
     """
     Changes the dimensions of a bounding box to a fixed ratio
+
     Args:
         bbox: Bounding box
         squarify_ratio: Ratio to be changed to
@@ -196,6 +203,7 @@ def squarify(bbox, squarify_ratio, img_width):
 def update_progress(progress):
     """
     Shows the progress
+
     Args:
         progress: Progress thus far
     """
@@ -213,6 +221,7 @@ def update_progress(progress):
 def img_pad_pil(img, mode='warp', size=224):
     """
     Pads and/or resizes a given image
+
     Args:
         img: The image to be coropped and/or padded
         mode: The type of padding or resizing. Options are,
@@ -247,9 +256,11 @@ def img_pad_pil(img, mode='warp', size=224):
                                    (size - img_size[1]) // 2))
         return padded_image
 
+
 def img_pad(img, mode='warp', size=224):
     """
     Pads and/or resizes a given image
+
     Args:
         img: The image to be coropped and/or padded
         mode: The type of padding or resizing. Options are,
@@ -273,16 +284,16 @@ def img_pad(img, mode='warp', size=224):
     elif mode == 'same':
         return image
     elif mode in ['pad_same', 'pad_resize', 'pad_fit']:
-        img_size = image.shape[:2][::-1] # original size is in (height, width)
-        ratio = float(size)/max(img_size)
+        img_size = image.shape[:2][::-1]  # original size is in (height, width)
+        ratio = float(size) / max(img_size)
         if mode == 'pad_resize' or \
                 (mode == 'pad_fit' and (img_size[0] > size or img_size[1] > size)):
             img_size = tuple([int(img_size[0] * ratio), int(img_size[1] * ratio)])
             image = cv2.resize(image, img_size)
-        padded_image = np.zeros((size, size)+(image.shape[-1],), dtype=img.dtype)
-        w_off = (size-img_size[0])//2
-        h_off = (size-img_size[1])//2
-        padded_image[h_off:h_off + img_size[1], w_off:w_off+ img_size[0],:] = image
+        padded_image = np.zeros((size, size) + (image.shape[-1],), dtype=img.dtype)
+        w_off = (size - img_size[0]) // 2
+        h_off = (size - img_size[1]) // 2
+        padded_image[h_off:h_off + img_size[1], w_off:w_off + img_size[0], :] = image
         return padded_image
 
 
@@ -290,6 +301,7 @@ def bbox_sanity_check(img_size, bbox):
     """
     Checks whether  bounding boxes are within image boundaries.
     If this is not the case, modifications are applied.
+
     Args:
         img_size: The size of the image
         bbox: The bounding box coordinates
@@ -315,6 +327,7 @@ def get_path(file_name='',
              save_root_folder='data/'):
     """
     Generates paths for saving model and config data.
+
     Args:
         file_name: The actual save file name , e.g. 'model.h5'
         sub_folder: If another folder to be created within the root folder
@@ -339,13 +352,14 @@ LARGEFLOW = 1e8
 def read_flow_file(optflow_path):
     with open(optflow_path, 'rb') as f:
         tag = np.fromfile(f, np.float32, count=1)
-        data2d = None
         assert tag == 202021.25, 'Incorrect .flo file, {}'.format(optflow_path)
         w = np.fromfile(f, np.int32, count=1)[0]
         h = np.fromfile(f, np.int32, count=1)[0]
         data2d = np.fromfile(f, np.float32, count=2 * w * h)
         # reshape data into 3D array (columns, rows, channels)
         return np.resize(data2d, (h, w, 2))
+
+
 def write_flow(flow, optflow_path):
     with open(optflow_path, 'wb') as f:
         magic = np.array([202021.25], dtype=np.float32)
@@ -361,6 +375,7 @@ def write_flow(flow, optflow_path):
 def make_color_wheel():
     """
     Generate color wheel according Middlebury color code
+
     :return: Color wheel
     """
     RY = 15
@@ -378,37 +393,40 @@ def make_color_wheel():
 
     # RY
     colorwheel[0:RY, 0] = 255
-    colorwheel[0:RY, 1] = np.transpose(np.floor(255*np.arange(0, RY) / RY))
+    colorwheel[0:RY, 1] = np.transpose(np.floor(255 * np.arange(0, RY) / RY))
     col += RY
 
     # YG
-    colorwheel[col:col+YG, 0] = 255 - np.transpose(np.floor(255*np.arange(0, YG) / YG))
-    colorwheel[col:col+YG, 1] = 255
+    colorwheel[col:col + YG, 0] = 255 - np.transpose(np.floor(255 * np.arange(0, YG) / YG))
+    colorwheel[col:col + YG, 1] = 255
     col += YG
 
     # GC
-    colorwheel[col:col+GC, 1] = 255
-    colorwheel[col:col+GC, 2] = np.transpose(np.floor(255*np.arange(0, GC) / GC))
+    colorwheel[col:col + GC, 1] = 255
+    colorwheel[col:col + GC, 2] = np.transpose(np.floor(255 * np.arange(0, GC) / GC))
     col += GC
 
     # CB
-    colorwheel[col:col+CB, 1] = 255 - np.transpose(np.floor(255*np.arange(0, CB) / CB))
-    colorwheel[col:col+CB, 2] = 255
+    colorwheel[col:col + CB, 1] = 255 - np.transpose(np.floor(255 * np.arange(0, CB) / CB))
+    colorwheel[col:col + CB, 2] = 255
     col += CB
 
     # BM
-    colorwheel[col:col+BM, 2] = 255
-    colorwheel[col:col+BM, 0] = np.transpose(np.floor(255*np.arange(0, BM) / BM))
+    colorwheel[col:col + BM, 2] = 255
+    colorwheel[col:col + BM, 0] = np.transpose(np.floor(255 * np.arange(0, BM) / BM))
     col += + BM
 
     # MR
-    colorwheel[col:col+MR, 2] = 255 - np.transpose(np.floor(255 * np.arange(0, MR) / MR))
-    colorwheel[col:col+MR, 0] = 255
+    colorwheel[col:col + MR, 2] = 255 - np.transpose(np.floor(255 * np.arange(0, MR) / MR))
+    colorwheel[col:col + MR, 0] = 255
 
     return colorwheel
+
+
 def compute_color(u, v):
     """
     compute optical flow color map
+
     :param u: optical flow horizontal map
     :param v: optical flow vertical map
     :return: optical flow in color code
@@ -448,9 +466,12 @@ def compute_color(u, v):
         img[:, :, i] = np.uint8(np.floor(255 * col * (1 - nanIdx)))
 
     return img
+
+
 def flow_to_image(flow):
     """
     Convert flow into middlebury color code image
+
     :param flow: optical flow map
     :return: optical flow image in middlebury color
     """
@@ -517,6 +538,6 @@ def tte_weighted_acc(tte, gt, y, weights='quadratic'):
     if weights == 'quadratic':
         unq_tte = np.square(unq_tte)
 
-    acc_tte = np.sum(np.multiply(acc_tte, unq_tte)/np.sum(unq_tte))
+    acc_tte = np.sum(np.multiply(acc_tte, unq_tte) / np.sum(unq_tte))
 
     return acc_tte

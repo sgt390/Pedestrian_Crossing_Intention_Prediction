@@ -1,0 +1,7 @@
+/JAAD
+/deeplabv3_mnv2_cityscapes_train_2018_02_05.tar.gz
+/data/models/
+/venv/
+/data/features/jaad/local_context_c3d_raw_1.5/
+/data/features/jaad/local_context_cnn_vgg_raw_1.5/
+/.idea
