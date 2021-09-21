@@ -4494,7 +4494,7 @@ class PCPA(ActionPredict):
 
         for i in range(1, core_size):
             ## todo remove next line
-            print(f'{network_inputs[i]=}, {data_types[i]=}')
+            print(f'networkinput={network_inputs[i]}, datatype={data_types[i]}')
             network_inputs.append(Input(shape=data_sizes[i], name='input_' + data_types[i]))
             encoder_outputs.append(
                 self._rnn(name='enc_' + data_types[i], r_sequence=return_sequence)(network_inputs[i]))
