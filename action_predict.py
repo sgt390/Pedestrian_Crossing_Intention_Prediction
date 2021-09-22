@@ -1111,7 +1111,7 @@ class ActionPredict(object):
         recall = recall_score(test_data['data'][1], np.round(test_results))
         pre_recall = precision_recall_curve(test_data['data'][1], test_results)
 
-        # THIS IS TEMPORARY, REMOVE BEFORE RELEASE
+        # todo THIS IS TEMPORARY, REMOVE BEFORE RELEASE
         with open(os.path.join(model_path, 'test_output.pkl'), 'wb') as picklefile:
             pickle.dump({'tte': test_data['tte'],
                          'pid': test_data['ped_id'],
@@ -4493,7 +4493,6 @@ class PCPA(ActionPredict):
         encoder_outputs.append(x)
 
         for i in range(1, core_size):
-            ## todo remove next line
             network_inputs.append(Input(shape=data_sizes[i], name='input_' + data_types[i]))
             encoder_outputs.append(
                 self._rnn(name='enc_' + data_types[i], r_sequence=return_sequence)(network_inputs[i]))
