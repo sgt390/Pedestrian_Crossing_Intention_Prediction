@@ -1044,7 +1044,7 @@ class ActionPredict(object):
 
         # Train the model
         class_w = self.class_weights(model_opts['apply_class_weights'], data_train['count'])
-        optimizer = self.get_optimizer(optimizer)(lr=lr)
+        optimizer = self.get_optimizer(optimizer)(learning_rate=lr)
         train_model.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=['accuracy'])
         ## reivse fit
         callbacks = self.get_callbacks(learning_scheduler, model_path)
@@ -1670,7 +1670,7 @@ class TwoStreamI3D(ActionPredict):
 
         # Train the model
         class_w = self.class_weights(model_opts['apply_class_weights'], data_train['count'])
-        optimizer = self.get_optimizer(optimizer)(lr=lr)
+        optimizer = self.get_optimizer(optimizer)(learning_rate=lr)
         train_model = self.get_model(data_train['data_params'])
         train_model.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=['accuracy'])
 
@@ -2369,7 +2369,7 @@ class ATGC(ActionPredict):
         class_w = self.class_weights(model_opts['apply_class_weights'], data_train['count'])
         callbacks = self.get_callbacks(learning_scheduler, model_path)
 
-        optimizer = self.get_optimizer(optimizer)(lr=lr)
+        optimizer = self.get_optimizer(optimizer)(learning_rate=lr)
         train_model.compile(loss=loss_func, optimizer=optimizer, metrics=['accuracy'])
         history = train_model.fit(x=data_train['data'][0][0],
                                   y=None if self._generator else data_train['data'][1],
@@ -2862,7 +2862,7 @@ class TwoStream(ActionPredict):
         learning_scheduler = learning_scheduler or {}
         if model_type == 'opt_flow':
             self._weights = None
-        optimizer = self.get_optimizer(optimizer)(lr=lr)
+        optimizer = self.get_optimizer(optimizer)(learning_rate=lr)
         train_model = self.get_model(data_train['data_params_' + model_type])
         train_model.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=['accuracy'])
 
@@ -3245,7 +3245,7 @@ class TwoStreamFusion(ActionPredict):
                 data_val = data_val[0]
 
         class_w = self.class_weights(model_opts['apply_class_weights'], data_train['count'])
-        optimizer = self.get_optimizer(optimizer)(lr=lr)
+        optimizer = self.get_optimizer(optimizer)(learning_rate=lr)
         train_model = self.get_model(data_train['data_params'])
         train_model.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=['accuracy'])
         callbacks = self.get_callbacks(learning_scheduler, model_path)

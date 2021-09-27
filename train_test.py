@@ -28,6 +28,7 @@ def fix_gpu():
     config.gpu_options.allow_growth = True
     session = InteractiveSession(config=config)
 
+
 fix_gpu()
 #############
 
