@@ -18,21 +18,6 @@ from jaad_data import JAAD
 import tensorflow as tf
 
 
-### try fixing - todo delete? compatibility
-from tensorflow.compat.v1 import ConfigProto
-from tensorflow.compat.v1 import InteractiveSession
-
-
-def fix_gpu():
-    config = ConfigProto()
-    config.gpu_options.allow_growth = True
-    session = InteractiveSession(config=config)
-
-
-fix_gpu()
-#############
-
-
 gpus = tf.config.experimental.list_physical_devices('GPU')
 assert len(gpus) > 0, "Not enough GPU hardware devices available"
 for gpu in gpus:
