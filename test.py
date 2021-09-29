@@ -34,7 +34,7 @@ def test_model(saved_files_path=None):
             # imdb.get_data_stats()
     elif model_opts['dataset'] == 'jaad':
             # imdb = JAAD(data_path=os.environ.copy()['JAAD_PATH'])
-            imdb = JAAD(data_path='/JAAD/')
+            imdb = JAAD(data_path='JAAD/')
     else:
             raise ValueError("{} dataset is incorrect".format(model_opts['dataset']))
 
