@@ -11,7 +11,8 @@ net_opts:
   cell_type: gru
   backbone: vgg
 exp_opts:
-  datasets: [jaad_all, jaad_beh]
-  batch_size: [2, 2]
-  epochs: [2, 2]
-  lr: [5.0e-07, 5.0e-07]
+  datasets: [jaad_beh]
+  batch_size: [2]
+  epochs: [2]
+  lr: [5.0e-07]
+  learning_scheduler: [[tensorboard]]
