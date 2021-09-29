@@ -6,3 +6,4 @@ model.h5
 /data/features/jaad/local_context_cnn_vgg_raw_1.5/
 /.idea
 /cudainstallation
+__pycache__
