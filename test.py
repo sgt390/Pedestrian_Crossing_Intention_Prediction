@@ -6,14 +6,14 @@ import sys
 import yaml
 import tensorflow as tf
 
-#gpus = tf.config.experimental.list_physical_devices('GPU')
-#assert len(gpus) > 0, "Not enough GPU hardware devices available"
-#for gpu in gpus:
-#    tf.config.experimental.set_memory_growth(gpu, True)
-#    tf.config.experimental.set_virtual_device_configuration(
-#        gpu,
-#        [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=4096)]
-#    )
+gpus = tf.config.experimental.list_physical_devices('GPU')
+assert len(gpus) > 0, "Not enough GPU hardware devices available"
+for gpu in gpus:
+    tf.config.experimental.set_memory_growth(gpu, True)
+    tf.config.experimental.set_virtual_device_configuration(
+        gpu,
+        [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=4096)]
+    )
 
 def test_model(saved_files_path=None):
 
