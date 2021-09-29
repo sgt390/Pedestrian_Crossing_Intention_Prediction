@@ -105,7 +105,7 @@ def run(config_file=None):
         configs['train_opts']['batch_size'] = model_configs['exp_opts']['batch_size'][dataset_idx]
         configs['train_opts']['lr'] = model_configs['exp_opts']['lr'][dataset_idx]
         configs['train_opts']['epochs'] = model_configs['exp_opts']['epochs'][dataset_idx]
-        configs['train_opts']['learning_scheduler'] = set(model_configs['exp_opts']['learning_scheduler'][dataset_idx]) if 'learning_scheduler' in model_configs['exp_opts'] else None
+        #configs['train_opts']['learning_scheduler'] = set(model_configs['exp_opts']['learning_scheduler'][dataset_idx]) if 'learning_scheduler' in model_configs['exp_opts'] else None
 
         model_name = configs['model_opts']['model']
         # Remove speed in case the dataset is jaad
