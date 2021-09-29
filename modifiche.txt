@@ -1,0 +1,2 @@
+added tensorboard logs genration to action_predict:ActionPredict.get_callbacks
+todo add conditional to activate tensorboard to the config file
