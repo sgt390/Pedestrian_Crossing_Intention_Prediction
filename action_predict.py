@@ -981,6 +981,11 @@ class ActionPredict(object):
                                   'save_freq': 'epoch', 'verbose': 2}
                 default_params.update(learning_scheduler['checkpoint'])
                 callbacks.append(ModelCheckpoint(**default_params))
+            if 'tensorboard' in learning_scheduler:
+                default_params = {'log_dir': os.path.join('data', 'logs', os.path.split(model_path)[-1]),
+                                  'histogram_freq': 1}
+                tensorboard_callback = tf.keras.callbacks.TensorBoard(**default_params)
+                callbacks.append(tensorboard_callback)
 
         return callbacks
 
