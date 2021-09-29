@@ -6,3 +6,4 @@
 /data/features/jaad/local_context_cnn_vgg_raw_1.5/
 /.idea
 /PIPvenv
+/__pycache__
