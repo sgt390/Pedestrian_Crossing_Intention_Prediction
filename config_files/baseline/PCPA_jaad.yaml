@@ -15,3 +15,4 @@ exp_opts:
   batch_size: [2, 2]
   epochs: [40, 40]
   lr: [5.0e-07, 5.0e-07]
+  learning_scheduler: [[tensorboard]]
