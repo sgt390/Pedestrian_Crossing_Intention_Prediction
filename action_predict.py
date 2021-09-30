@@ -969,11 +969,11 @@ class ActionPredict(object):
         Returns:
             A list of call backs or None if learning_scheduler is false
         """
-        callbacks = None
+        wandb_callback = WandbCallback()
+        callbacks = wandb_callback
 
         # Set up learning schedulers
         if learning_scheduler:
-            callbacks = []
             if 'early_stop' in learning_scheduler:
                 default_params = {'monitor': 'val_loss',
                                   'min_delta': 1.0, 'patience': 5,
@@ -994,8 +994,6 @@ class ActionPredict(object):
                                   'save_freq': 'epoch', 'verbose': 2}
                 default_params.update(learning_scheduler['checkpoint'])
                 callbacks.append(ModelCheckpoint(**default_params))
-            wandb_callback = WandbCallback()
-            callbacks.append(wandb_callback)
 
         return callbacks
 
