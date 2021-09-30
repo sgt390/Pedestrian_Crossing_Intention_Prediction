@@ -53,6 +53,7 @@ from tensorflow.keras.models import Model
 import numpy as np
 
 import wandb
+from wandb.keras import WandbCallback
 
 ###############################################
 class DeepLabModel(object):
