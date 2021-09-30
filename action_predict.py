@@ -175,10 +175,9 @@ def init_canvas(width, height, color=(255, 255, 255)):
     channel_r *= color[2]
     return cv2.merge([channel_b, channel_g, channel_r])
 
-def start_wandb(name):
-    run = wandb.init(project='pcip', entity='sgt390', reinit=True)
+def start_wandb(name, config):
+    run = wandb.init(project='pcip', entity='sgt390', reinit=True, config=config)
     run.name = name
-    run.save()
     return run
 
 def stop_wandb(run):
@@ -1062,7 +1061,7 @@ class ActionPredict(object):
         ## reivse fit
 
         # log run
-        run = start_wandb(path_params['save_folder'], config={
+        run = start_wandb(name=path_params['save_folder'], config={
             "learning_rate": lr,
             "epochs": epochs,
             "loss_function": "binary_crossentropy",
