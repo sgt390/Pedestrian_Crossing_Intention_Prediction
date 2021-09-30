@@ -968,7 +968,7 @@ class ActionPredict(object):
         Returns:
             A list of call backs or None if learning_scheduler is false
         """
-        wandb_callback = WandbCallback()
+        wandb_callback = WandbCallback(log_evaluation=True)
         callbacks = wandb_callback
 
         # Set up learning schedulers
