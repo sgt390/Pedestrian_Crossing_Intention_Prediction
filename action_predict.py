@@ -172,6 +172,15 @@ def init_canvas(width, height, color=(255, 255, 255)):
     channel_r *= color[2]
     return cv2.merge([channel_b, channel_g, channel_r])
 
+def start_wandb(name):
+    run = wandb.init(project='pcip', entity='sgt390', reinit=True)
+    run.name = name
+    run.save()
+    return run
+
+def stop_wandb(run):
+    run.finish()
+
 
 # def vis_segmentation(image, seg_map):
 #     """Visualizes input image, segmentation map and overlay view."""
@@ -981,6 +990,8 @@ class ActionPredict(object):
                                   'save_freq': 'epoch', 'verbose': 2}
                 default_params.update(learning_scheduler['checkpoint'])
                 callbacks.append(ModelCheckpoint(**default_params))
+            wandb_callback = WandbCallback()
+            callbacks.append(wandb_callback)
 
         return callbacks
 
@@ -1044,9 +1055,13 @@ class ActionPredict(object):
 
         # Train the model
         class_w = self.class_weights(model_opts['apply_class_weights'], data_train['count'])
-        optimizer = self.get_optimizer(optimizer)(lr=lr)
+        optimizer = self.get_optimizer(optimizer)(learning_rate=lr)
         train_model.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=['accuracy'])
         ## reivse fit
+
+        # log run
+        run = start_wandb(path_params['save_folder'])
+
         callbacks = self.get_callbacks(learning_scheduler, model_path)
 
         # data_val = data_val.batch(batch_size)
@@ -1061,6 +1076,9 @@ class ActionPredict(object):
         if 'checkpoint' not in learning_scheduler:
             print('Train model is saved to {}'.format(model_path))
             train_model.save(model_path)
+
+        # stop logging
+        stop_wandb(run)
 
         # Save data options and configurations
         model_opts_path, _ = get_path(**path_params, file_name='model_opts.pkl')
@@ -1111,7 +1129,7 @@ class ActionPredict(object):
         recall = recall_score(test_data['data'][1], np.round(test_results))
         pre_recall = precision_recall_curve(test_data['data'][1], test_results)
 
-        # THIS IS TEMPORARY, REMOVE BEFORE RELEASE
+        # todo THIS IS TEMPORARY, REMOVE BEFORE RELEASE
         with open(os.path.join(model_path, 'test_output.pkl'), 'wb') as picklefile:
             pickle.dump({'tte': test_data['tte'],
                          'pid': test_data['ped_id'],
@@ -1670,7 +1688,7 @@ class TwoStreamI3D(ActionPredict):
 
         # Train the model
         class_w = self.class_weights(model_opts['apply_class_weights'], data_train['count'])
-        optimizer = self.get_optimizer(optimizer)(lr=lr)
+        optimizer = self.get_optimizer(optimizer)(learning_rate=lr)
         train_model = self.get_model(data_train['data_params'])
         train_model.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=['accuracy'])
 
@@ -2369,7 +2387,7 @@ class ATGC(ActionPredict):
         class_w = self.class_weights(model_opts['apply_class_weights'], data_train['count'])
         callbacks = self.get_callbacks(learning_scheduler, model_path)
 
-        optimizer = self.get_optimizer(optimizer)(lr=lr)
+        optimizer = self.get_optimizer(optimizer)(learning_rate=lr)
         train_model.compile(loss=loss_func, optimizer=optimizer, metrics=['accuracy'])
         history = train_model.fit(x=data_train['data'][0][0],
                                   y=None if self._generator else data_train['data'][1],
@@ -2862,7 +2880,7 @@ class TwoStream(ActionPredict):
         learning_scheduler = learning_scheduler or {}
         if model_type == 'opt_flow':
             self._weights = None
-        optimizer = self.get_optimizer(optimizer)(lr=lr)
+        optimizer = self.get_optimizer(optimizer)(learning_rate=lr)
         train_model = self.get_model(data_train['data_params_' + model_type])
         train_model.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=['accuracy'])
 
@@ -3245,7 +3263,7 @@ class TwoStreamFusion(ActionPredict):
                 data_val = data_val[0]
 
         class_w = self.class_weights(model_opts['apply_class_weights'], data_train['count'])
-        optimizer = self.get_optimizer(optimizer)(lr=lr)
+        optimizer = self.get_optimizer(optimizer)(learning_rate=lr)
         train_model = self.get_model(data_train['data_params'])
         train_model.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=['accuracy'])
         callbacks = self.get_callbacks(learning_scheduler, model_path)

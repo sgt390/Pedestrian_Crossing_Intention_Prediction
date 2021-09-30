@@ -17,17 +17,15 @@ from jaad_data import JAAD
 # from pie_data import PIE
 import tensorflow as tf
 
-if tf.test.is_gpu_available():
-    gpus = tf.config.experimental.list_physical_devices('GPU')
-    assert len(gpus) > 0, "Not enough GPU hardware devices available"
-    for gpu in gpus:
-        tf.config.experimental.set_memory_growth(gpu, True)
-        tf.config.experimental.set_virtual_device_configuration(
-            gpu,
-            [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024)] # TODO changed from 4096 for testing
-        )
-else:
-    print('No GPU available, using CPU')
+
+gpus = tf.config.experimental.list_physical_devices('GPU')
+assert len(gpus) > 0, "Not enough GPU hardware devices available"
+for gpu in gpus:
+    tf.config.experimental.set_memory_growth(gpu, True)
+    tf.config.experimental.set_virtual_device_configuration(
+        gpu,
+        [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=8192)] # TODO using too much memory?
+    )
 
 
 # config = tf.compat.v1.ConfigProto()
@@ -107,6 +105,7 @@ def run(config_file=None):
         configs['train_opts']['batch_size'] = model_configs['exp_opts']['batch_size'][dataset_idx]
         configs['train_opts']['lr'] = model_configs['exp_opts']['lr'][dataset_idx]
         configs['train_opts']['epochs'] = model_configs['exp_opts']['epochs'][dataset_idx]
+        #configs['train_opts']['learning_scheduler'] = set(model_configs['exp_opts']['learning_scheduler'][dataset_idx]) if 'learning_scheduler' in model_configs['exp_opts'] else None
 
         model_name = configs['model_opts']['model']
         # Remove speed in case the dataset is jaad
@@ -141,7 +140,7 @@ def run(config_file=None):
         # get sequences
         beh_seq_train = imdb.generate_data_trajectory_sequence('train', **configs['data_opts'])
         beh_seq_val = None
-        # Uncomment the line below to use validation set
+        # Uncomment the line below touse validation set
         # beh_seq_val = imdb.generate_data_trajectory_sequence('val', **configs['data_opts'])
         beh_seq_test = imdb.generate_data_trajectory_sequence('test', **configs['data_opts'])  ## load_dataset
 

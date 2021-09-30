@@ -5,6 +5,7 @@ import os
 import sys
 import yaml
 import tensorflow as tf
+
 gpus = tf.config.experimental.list_physical_devices('GPU')
 assert len(gpus) > 0, "Not enough GPU hardware devices available"
 for gpu in gpus:
@@ -33,7 +34,7 @@ def test_model(saved_files_path=None):
             # imdb.get_data_stats()
     elif model_opts['dataset'] == 'jaad':
             # imdb = JAAD(data_path=os.environ.copy()['JAAD_PATH'])
-            imdb = JAAD(data_path='/home/haolin/CITR/PedestrianActionBenchmark/JAAD/')
+            imdb = JAAD(data_path='JAAD/')
     else:
             raise ValueError("{} dataset is incorrect".format(model_opts['dataset']))
 
