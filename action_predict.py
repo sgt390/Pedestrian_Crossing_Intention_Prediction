@@ -87,6 +87,7 @@ class DeepLabModel(object):
 
         self.sess = tf.compat.v1.Session(graph=self.graph)
 
+
     def run(self, image):
         """Runs inference on a single image.
 
@@ -253,6 +254,7 @@ class ActionPredict(object):
         self._global_pooling = global_pooling
         self._backbone = backbone
         self._generator = None  # use data generator for train/test
+
 
     # Processing images anf generate features
     def load_images_crop_and_process(self, img_sequences, bbox_sequences,
@@ -1062,7 +1064,11 @@ class ActionPredict(object):
         ## reivse fit
 
         # log run
-        run = start_wandb(path_params['save_folder'])
+        run = start_wandb(path_params['save_folder'], config={
+            "learning_rate": lr,
+            "epochs": epochs,
+            "loss_function": "binary_crossentropy",
+            "dataset": "JAAD" })
 
         callbacks = self.get_callbacks(learning_scheduler, model_path)
 
