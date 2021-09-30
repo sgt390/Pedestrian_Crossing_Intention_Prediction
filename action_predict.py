@@ -52,6 +52,7 @@ from tensorflow.keras.applications.vgg19 import preprocess_input
 from tensorflow.keras.models import Model
 import numpy as np
 
+import wandb
 
 ###############################################
 class DeepLabModel(object):
