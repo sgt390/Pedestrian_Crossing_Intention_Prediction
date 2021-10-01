@@ -17,6 +17,7 @@ from jaad_data import JAAD
 # from pie_data import PIE
 import tensorflow as tf
 
+import wandb
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
 assert len(gpus) > 0, "Not enough GPU hardware devices available"
@@ -137,6 +138,12 @@ def run(config_file=None):
             # if use local path
             imdb = JAAD(data_path='./JAAD/')
 
+        # log run
+        run = start_wandb(name=path_params['save_folder'], config=configs['data_opts'])
+        run = wandb.config.update(configs['model_opts'])
+        run = wandb.config.update(configs['train_opts'])
+
+
         # get sequences
         beh_seq_train = imdb.generate_data_trajectory_sequence('train', **configs['data_opts'])
         beh_seq_val = None
@@ -163,8 +170,18 @@ def run(config_file=None):
         data['results']['recall'] = float(recall)
         write_to_yaml(yaml_path=os.path.join(saved_files_path, 'results.yaml'), data=data)
 
+
+        wandb.log(data['results'])
+        # stop logging
+        stop_wandb(run)
+
+
         data = configs
         write_to_yaml(yaml_path=os.path.join(saved_files_path, 'configs.yaml'), data=data)
+
+
+
+
 
         print('Model saved to {}'.format(saved_files_path))
 

@@ -969,7 +969,7 @@ class ActionPredict(object):
             A list of call backs or None if learning_scheduler is false
         """
         wandb_callback = WandbCallback(log_evaluation=True)
-        callbacks = wandb_callback
+        callbacks = [wandb_callback]
 
         # Set up learning schedulers
         if learning_scheduler:
@@ -1060,13 +1060,6 @@ class ActionPredict(object):
         train_model.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=['accuracy'])
         ## reivse fit
 
-        # log run
-        run = start_wandb(name=path_params['save_folder'], config={
-            "learning_rate": lr,
-            "epochs": epochs,
-            "loss_function": "binary_crossentropy",
-            "dataset": "JAAD" })
-
         callbacks = self.get_callbacks(learning_scheduler, model_path)
 
         # data_val = data_val.batch(batch_size)
@@ -1082,8 +1075,6 @@ class ActionPredict(object):
             print('Train model is saved to {}'.format(model_path))
             train_model.save(model_path)
 
-        # stop logging
-        stop_wandb(run)
 
         # Save data options and configurations
         model_opts_path, _ = get_path(**path_params, file_name='model_opts.pkl')
