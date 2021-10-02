@@ -71,6 +71,15 @@ def write_to_yaml(yaml_path=None, data=None):
         yaml.dump(data, yamlfile)
 
 
+def start_wandb(config):
+    wandb_run = wandb.init(project='pcip', entity='sgt390', reinit=True, config=config)
+    return wandb_run
+
+
+def stop_wandb(wandb_run):
+    wandb_run.finish()
+
+
 def run(config_file=None):
     """
     Run train and test on the dataset with parameters specified in configuration file.
@@ -139,9 +148,9 @@ def run(config_file=None):
             imdb = JAAD(data_path='./JAAD/')
 
         # log run
-        run = start_wandb(name=path_params['save_folder'], config=configs['data_opts'])
-        run = wandb.config.update(configs['model_opts'])
-        run = wandb.config.update(configs['train_opts'])
+        wandb_run = start_wandb(config=configs['data_opts'])
+        wandb_run = wandb.config.update(configs['model_opts'])
+        wandb_run = wandb.config.update(configs['train_opts'])
 
 
         # get sequences
@@ -173,7 +182,7 @@ def run(config_file=None):
 
         wandb.log(data['results'])
         # stop logging
-        stop_wandb(run)
+        stop_wandb(wandb_run)
 
 
         data = configs

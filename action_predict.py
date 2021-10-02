@@ -175,14 +175,6 @@ def init_canvas(width, height, color=(255, 255, 255)):
     channel_r *= color[2]
     return cv2.merge([channel_b, channel_g, channel_r])
 
-def start_wandb(name, config):
-    run = wandb.init(project='pcip', entity='sgt390', reinit=True, config=config)
-    run.name = name
-    return run
-
-def stop_wandb(run):
-    run.finish()
-
 
 # def vis_segmentation(image, seg_map):
 #     """Visualizes input image, segmentation map and overlay view."""
