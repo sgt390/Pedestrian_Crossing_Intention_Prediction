@@ -185,7 +185,7 @@ def run(config_file=None):
         wandb.summary['recall'] = data['results']['recall']
 
         # stop logging
-        stop_wandb()
+        stop_wandb(wandb_run)
 
 
         data = configs
