@@ -179,8 +179,11 @@ def run(config_file=None):
         data['results']['recall'] = float(recall)
         write_to_yaml(yaml_path=os.path.join(saved_files_path, 'results.yaml'), data=data)
 
+        wandb.summary['acc'] = data['results']['acc']
+        wandb.summary['auc'] = data['results']['auc']
+        wandb.summary['f1'] = data['results']['f1']
+        wandb.summary['recall'] = data['results']['recall']
 
-        wandb.log(data['results'])
         # stop logging
         stop_wandb(wandb_run)
 
