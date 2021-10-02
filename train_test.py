@@ -149,8 +149,8 @@ def run(config_file=None):
 
         # log run
         wandb_run = start_wandb(config=configs['data_opts'])
-        wandb_run = wandb.config.update(configs['model_opts'])
-        wandb_run = wandb.config.update(configs['train_opts'])
+        wandb.config.update(configs['model_opts'])
+        wandb.config.update(configs['train_opts'])
 
 
         # get sequences
