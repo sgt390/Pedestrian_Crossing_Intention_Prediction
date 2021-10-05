@@ -73,7 +73,7 @@ def write_to_yaml(yaml_path=None, data=None):
 
 def start_wandb(config, dataset_name, model_name):
     wandb_run = wandb.init(project='pcip', entity='sgt390', reinit=True, config=config)
-    wandb.run.name = f'{dataset_name}_{model_name}'
+    wandb.run.name = f'{model_name}_{dataset_name}'
     return wandb_run
 
 
