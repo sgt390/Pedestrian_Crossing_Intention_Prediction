@@ -4,7 +4,7 @@ import os
 import yaml
 import getopt
 import sys
-
+import time
 import numpy as np
 from tensorflow.keras import backend as K
 
@@ -71,8 +71,9 @@ def write_to_yaml(yaml_path=None, data=None):
         yaml.dump(data, yamlfile)
 
 
-def start_wandb(config):
+def start_wandb(config, dataset):
     wandb_run = wandb.init(project='pcip', entity='sgt390', reinit=True, config=config)
+    wandb.run.name = f'{dataset}_{time.strftime("%d%b%Y-%Hh%Mm%Ss")}'
     return wandb_run
 
 
@@ -148,7 +149,7 @@ def run(config_file=None):
             imdb = JAAD(data_path='./JAAD/')
 
         # log run
-        wandb_run = start_wandb(config=configs['data_opts'])
+        wandb_run = start_wandb(config=configs['data_opts'], dataset=dataset)
         wandb.config.update(configs['model_opts'])
         wandb.config.update(configs['train_opts'])
 

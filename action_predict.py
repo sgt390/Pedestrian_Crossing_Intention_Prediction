@@ -35,7 +35,6 @@ from matplotlib import gridspec
 from matplotlib import pyplot as plt
 import tarfile
 import os
-import time
 import scipy.misc
 import cv2
 
@@ -54,6 +53,7 @@ import numpy as np
 
 import wandb
 from wandb.keras import WandbCallback
+
 
 ###############################################
 class DeepLabModel(object):
@@ -86,7 +86,6 @@ class DeepLabModel(object):
             tf.import_graph_def(graph_def, name='')
 
         self.sess = tf.compat.v1.Session(graph=self.graph)
-
 
     def run(self, image):
         """Runs inference on a single image.
@@ -245,7 +244,6 @@ class ActionPredict(object):
         self._global_pooling = global_pooling
         self._backbone = backbone
         self._generator = None  # use data generator for train/test
-
 
     # Processing images anf generate features
     def load_images_crop_and_process(self, img_sequences, bbox_sequences,
@@ -1066,7 +1064,6 @@ class ActionPredict(object):
         if 'checkpoint' not in learning_scheduler:
             print('Train model is saved to {}'.format(model_path))
             train_model.save(model_path)
-
 
         # Save data options and configurations
         model_opts_path, _ = get_path(**path_params, file_name='model_opts.pkl')
