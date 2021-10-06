@@ -156,9 +156,9 @@ def run(config_file=None):
 
         # get sequences
         beh_seq_train = imdb.generate_data_trajectory_sequence('train', **configs['data_opts'])
-        beh_seq_val = None
+        # beh_seq_val = None
         # Uncomment the line below touse validation set
-        # beh_seq_val = imdb.generate_data_trajectory_sequence('val', **configs['data_opts'])
+        beh_seq_val = imdb.generate_data_trajectory_sequence('val', **configs['data_opts'])
         beh_seq_test = imdb.generate_data_trajectory_sequence('test', **configs['data_opts'])  ## load_dataset
 
         # get the model
