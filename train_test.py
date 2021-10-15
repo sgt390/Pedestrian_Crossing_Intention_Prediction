@@ -148,7 +148,7 @@ def run(config_file=None):
             # if use local path
             imdb = JAAD(data_path='./JAAD/')
 
-        # log run
+        # log run (requires "wandb login")
         wandb_run = start_wandb(config=configs['data_opts'], dataset_name=dataset, model_name=model_name)
         wandb.config.update(configs['model_opts'])
         wandb.config.update(configs['train_opts'])

@@ -1135,7 +1135,7 @@ class JAAD(object):
         print("Generating crossing data")
 
         num_pedestrians = 0
-        seq_stride = params['fstride']
+        seq_stride = params['fstride']  # stride of 1 skips nothing (default)
         sq_ratio = params['squarify_ratio']
         height_rng = params['height_rng']
         image_seq, pids_seq = [], []

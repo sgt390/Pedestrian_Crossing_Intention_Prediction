@@ -15,7 +15,7 @@ model_opts:
   fusion_point: early # only for Two-Stream network
   fusion_method: sum # only for Two-Stream network
 data_opts:
-  fstride: 1
+  fstride: 1  # stride frequency. get the n-th frame after the current (1 for not skipping any frame)
   sample_type: all  # beh or all only when model_opts/dataset is set to jaad
   subset: default
   data_split_type: default  # kfold, random, default
