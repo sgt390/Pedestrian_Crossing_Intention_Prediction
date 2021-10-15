@@ -5682,15 +5682,15 @@ class MASK_PCPA_4_2D_NOGLOBAL(ActionPredict):
 
         # x = self._rnn(name='enc0_' + data_types[0], r_sequence=return_sequence)(network_inputs[0])  # global
         # encoder_outputs.append(x)
-        x = self._rnn(name='enc1_' + data_types[1], r_sequence=return_sequence)(network_inputs[1])  # local
+        x = self._rnn(name='enc1_' + data_types[0], r_sequence=return_sequence)(network_inputs[0])  # local
         encoder_outputs.append(x)
-        x = self._rnn(name='enc2_' + data_types[2], r_sequence=return_sequence)(network_inputs[2])  # pose
-        current = [x, network_inputs[3]]  # concat pose_rnn + bounding boxes
+        x = self._rnn(name='enc2_' + data_types[1], r_sequence=return_sequence)(network_inputs[1])  # pose
+        current = [x, network_inputs[2]]  # concat pose_rnn + bounding boxes
         x = Concatenate(name='concat_early3', axis=2)(current)
-        x = self._rnn(name='enc3_' + data_types[3], r_sequence=return_sequence)(x)
-        current = [x, network_inputs[4]]  # concat pose-bb_rnn + vehicle_speed
+        x = self._rnn(name='enc3_' + data_types[2], r_sequence=return_sequence)(x)
+        current = [x, network_inputs[3]]  # concat pose-bb_rnn + vehicle_speed
         x = Concatenate(name='concat_early4', axis=2)(current)
-        x = self._rnn(name='enc4_' + data_types[4], r_sequence=return_sequence)(x)
+        x = self._rnn(name='enc4_' + data_types[3], r_sequence=return_sequence)(x)
         encoder_outputs.append(x)
 
         if len(encoder_outputs) > 1:
