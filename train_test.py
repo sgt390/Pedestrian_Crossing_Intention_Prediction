@@ -25,7 +25,7 @@ for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
     tf.config.experimental.set_virtual_device_configuration(
         gpu,
-        [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=8192)] # TODO using too much memory?
+        [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=8192)]  # TODO using too much memory?
     )
 
 
@@ -116,7 +116,7 @@ def run(config_file=None):
         configs['train_opts']['batch_size'] = model_configs['exp_opts']['batch_size'][dataset_idx]
         configs['train_opts']['lr'] = model_configs['exp_opts']['lr'][dataset_idx]
         configs['train_opts']['epochs'] = model_configs['exp_opts']['epochs'][dataset_idx]
-        #configs['train_opts']['learning_scheduler'] = set(model_configs['exp_opts']['learning_scheduler'][dataset_idx]) if 'learning_scheduler' in model_configs['exp_opts'] else None
+        # configs['train_opts']['learning_scheduler'] = set(model_configs['exp_opts']['learning_scheduler'][dataset_idx]) if 'learning_scheduler' in model_configs['exp_opts'] else None
 
         model_name = configs['model_opts']['model']
         # Remove speed in case the dataset is jaad
@@ -153,8 +153,7 @@ def run(config_file=None):
         wandb.config.update(configs['model_opts'])
         wandb.config.update(configs['train_opts'])
 
-
-        # get sequences
+        # get sequences - beh or all
         beh_seq_train = imdb.generate_data_trajectory_sequence('train', **configs['data_opts'])
         # beh_seq_val = None
         # Uncomment the line below touse validation set
@@ -189,13 +188,8 @@ def run(config_file=None):
         # stop logging
         stop_wandb(wandb_run)
 
-
         data = configs
         write_to_yaml(yaml_path=os.path.join(saved_files_path, 'configs.yaml'), data=data)
-
-
-
-
 
         print('Model saved to {}'.format(saved_files_path))
 
