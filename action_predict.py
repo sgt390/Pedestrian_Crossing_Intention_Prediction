@@ -5285,13 +5285,13 @@ class MASK_PCPA_3_2D(ActionPredict):
         x = self._rnn(name='enc1_' + data_types[1], r_sequence=return_sequence)(x)
         current = [x, network_inputs[2]]
         x = Concatenate(name='concat_early2', axis=2)(current)
-        x = self._rnn(name='enc1_' + data_types[2], r_sequence=return_sequence)(x)
+        x = self._rnn(name='enc2_' + data_types[2], r_sequence=return_sequence)(x)
         current = [x, network_inputs[3]]
-        x = Concatenate(name='concat_early1', axis=2)(current)
-        x = self._rnn(name='enc1_' + data_types[3], r_sequence=return_sequence)(x)
+        x = Concatenate(name='concat_early3', axis=2)(current)
+        x = self._rnn(name='enc3_' + data_types[3], r_sequence=return_sequence)(x)
         current = [x, network_inputs[4]]
-        x = Concatenate(name='concat_early1', axis=2)(current)
-        x = self._rnn(name='enc1_' + data_types[4], r_sequence=return_sequence)(x)
+        x = Concatenate(name='concat_early4', axis=2)(current)
+        x = self._rnn(name='enc4_' + data_types[4], r_sequence=return_sequence)(x)
         encoder_outputs.append(x)
 
         if len(encoder_outputs) > 1:
@@ -6515,8 +6515,8 @@ class MASK_PCPA_3_2D_NONVISUAL(ActionPredict):
         x = Concatenate(name='concat_early1', axis=2)(current)
         x = self._rnn(name='enc1_' + data_types[1], r_sequence=return_sequence)(x)
         current = [x, network_inputs[2]]
-        x = Concatenate(name='concat_early1', axis=2)(current)
-        x = self._rnn(name='enc1_' + data_types[2], r_sequence=return_sequence)(x)
+        x = Concatenate(name='concat_early2', axis=2)(current)
+        x = self._rnn(name='enc2_' + data_types[2], r_sequence=return_sequence)(x)
         encoder_outputs.append(x)
 
         if len(encoder_outputs) > 1:
