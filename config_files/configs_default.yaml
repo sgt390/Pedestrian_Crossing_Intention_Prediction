@@ -31,4 +31,4 @@ train_opts:
   batch_size: 2
   epochs: 20
   lr: 0.000005
-  learning_scheduler:
+  learning_scheduler: [early_stop, checkpoint]  # empty
