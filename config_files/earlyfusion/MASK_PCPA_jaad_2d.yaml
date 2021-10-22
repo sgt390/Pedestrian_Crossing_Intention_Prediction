@@ -15,4 +15,3 @@ exp_opts:
   batch_size: [2, 2]
   epochs: [100, 100]  # [40, 40]
   lr: [5.0e-07, 5.0e-07]
-  learning_scheduler: [[early_stop], [early_stop]]  # empty
