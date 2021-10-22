@@ -14,7 +14,7 @@ model_opts:
   generator: True # using generator is slower but uses less memory, otherwise up to 64GB RAM may be required to run some of the models
   fusion_point: early # only for Two-Stream network
   fusion_method: sum # only for Two-Stream network
-data_opts:
+data_opts:  # ignored
   fstride: 1  # stride frequency. get the n-th frame after the current (1 for not skipping any frame)
   sample_type: all  # beh or all only when model_opts/dataset is set to jaad
   subset: default
@@ -27,8 +27,8 @@ net_opts:
   regularizer_val: 0.0001
   cell_type: gru
   backbone: vgg16
-train_opts:
+train_opts:  # ignored
   batch_size: 2
   epochs: 20
   lr: 0.000005
-  learning_scheduler: [early_stop, checkpoint]  # empty
+  learning_scheduler:
