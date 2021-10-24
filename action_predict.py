@@ -965,7 +965,7 @@ class ActionPredict(object):
         if learning_scheduler:
             if 'early_stop' in learning_scheduler:
                 default_params = {'monitor': 'val_loss',
-                                  'min_delta': 0.01, 'patience': 5,
+                                  'min_delta': 1, 'patience': 5,
                                   'verbose': 1}
                 default_params.update(learning_scheduler['early_stop'])
                 callbacks.append(EarlyStopping(**default_params))
