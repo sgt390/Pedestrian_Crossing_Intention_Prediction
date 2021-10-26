@@ -14,7 +14,7 @@ from action_predict import ActionPredict
 
 from jaad_data import JAAD
 # if use PIE data:
-# from pie_data import PIE
+from pie_data import PIE
 import tensorflow as tf
 
 import wandb
