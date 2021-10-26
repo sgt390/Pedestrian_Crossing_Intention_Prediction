@@ -140,8 +140,7 @@ def run(config_file=None):
             configs['train_opts']['batch_size'] = 16
 
         if configs['model_opts']['dataset'] == 'pie':
-            pass
-            # imdb = PIE(data_path=os.environ.copy()['PIE_PATH'])
+            imdb = PIE(data_path=os.environ.copy()['PIE_PATH'])  # TODO set path (automatic?) - make class for pie
         elif configs['model_opts']['dataset'] == 'jaad':
             # if use docker:
             # imdb = JAAD(data_path=os.environ.copy()['JAAD_PATH'])
