@@ -269,8 +269,8 @@ class ActionPredict:
         VGGmodel = Model(inputs=base_model.input, outputs=base_model.get_layer('block4_pool').output)
         # load the feature files if exists
         print("Generating {} features crop_type={} crop_mode={}\
-              \nsave_path={}, ".format(data_type, crop_type, crop_mode,
-                                       save_path))
+              \nsave_path={}, backbone={} ".format(data_type, crop_type, crop_mode,
+                                       save_path, self._backbone))
         # load segmentation model
         segmodel_path = "deeplabv3_mnv2_cityscapes_train_2018_02_05.tar.gz"
         segmodel = DeepLabModel(segmodel_path)
