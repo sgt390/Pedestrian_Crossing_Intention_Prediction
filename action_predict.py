@@ -301,7 +301,7 @@ class ActionPredict(object):
 
         preprocess_input = preprocess_dict.get(self._backbone, None)
         if process:
-            assert (self._backbone in ['vgg16', 'resnet50']), "{} is not supported".format(self._backbone)
+            assert (self._backbone in ['vgg16', 'resnet50']), f"{self._backbone} is not supported"
 
         convnet = backbone_dict[self._backbone](input_shape=(224, 224, 3),
                                                 include_top=False, weights='imagenet') if process else None
@@ -773,7 +773,6 @@ class ActionPredict(object):
 
     def get_context_data(self, model_opts, data, data_type, feature_type):
         print('\n#####################################')
-        print('Generating {} {}'.format(feature_type, data_type))
         print('Generating {} {}'.format(feature_type, data_type))
         print('#####################################')
         process = model_opts.get('process', True)
@@ -3401,7 +3400,7 @@ def attention_3d_block(hidden_states, dense_size=128, modality=''):
     attention_weights = Activation('softmax', name='attention_weight' + modality)(score)
     # (batch_size, time_steps, hidden_size) dot (batch_size, time_steps) => (batch_size, hidden_size)
     context_vector = dot([hidden_states, attention_weights], [1, 1], name='context_vector' + modality)
-    pre_activation = concatenate([context_vector, h_t], name='attention_output' + modality)
+    pre_activation = concatenate([context_vector, h_t], name='attention_output' + modality)-
     attention_vector = Dense(dense_size, use_bias=False, activation='tanh', name='attention_vector' + modality)(
         pre_activation)
     return attention_vector

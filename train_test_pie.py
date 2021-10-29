@@ -8,8 +8,7 @@ import time
 import numpy as np
 from tensorflow.keras import backend as K
 
-from action_predict import action_prediction
-from action_predict import ActionPredict
+from action_predict_pie import action_prediction
 # from new_model import NewModel, HybridModel, MultiRNN3D, MultiRNN3D_MATT
 
 from jaad_data import JAAD
@@ -27,32 +26,6 @@ for gpu in gpus:
         gpu,
         [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=8192)]  # TODO using too much memory?
     )
-
-
-# config = tf.compat.v1.ConfigProto()
-# # config.gpu_options.per_process_gpu_memory_fraction=0.8
-# config.gpu_options.allow_growth = True
-# sess = tf.compat.v1.Session(config=config)
-
-
-# from tensorflow.compat.v1 import ConfigProto
-# from tensorflow.compat.v1 import InteractiveSession
-# config = ConfigProto()
-# config.gpu_options.allow_growth = True
-# session = InteractiveSession(config=config)
-
-
-# config = tf.compat.v1.ConfigProto()
-# config.gpu_options.per_process_gpu_memory_fraction = 0.8
-# tf.keras.backend.set_session(tf.Session(config=config));
-
-# config = tf.compat.v1.ConfigProto()
-# config.gpu_options.allow_growth = True
-# sess = tf.Session(config=config)
-
-# physical_devices = tf.config.experimental.list_physical_devices('GPU')
-# assert len(physical_devices) > 0, "Not enough GPU hardware devices available"
-# config = tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 
 def write_to_yaml(yaml_path=None, data=None):

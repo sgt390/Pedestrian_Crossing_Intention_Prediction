@@ -9,7 +9,7 @@ net_opts:
   global_pooling: avg
   regularizer_val: 0.0001
   cell_type: gru
-  backbone: vgg
+  backbone: resnet50
 exp_opts:
   datasets: [pie]
   batch_size: [2, 2]
