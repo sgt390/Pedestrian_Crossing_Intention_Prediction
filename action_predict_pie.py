@@ -12,7 +12,7 @@ from tensorflow.keras.layers import Flatten, Average, Add
 from tensorflow.keras.layers import ConvLSTM2D, Conv2D
 from tensorflow.keras.models import Model, load_model
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint
-from tensorflow.keras.applications import vgg19, resnet50
+from tensorflow.keras.applications import vgg19, resnet50, efficientnet-
 from tensorflow.keras.layers import GlobalAveragePooling2D, GlobalMaxPooling2D, Lambda, dot, concatenate, Activation
 from tensorflow.keras.optimizers import Adam, SGD, RMSprop
 from tensorflow.keras import regularizers
@@ -282,12 +282,12 @@ class ActionPredict:
         FULL_LABEL_MAP = np.arange(len(LABEL_NAMES)).reshape(len(LABEL_NAMES), 1)
         FULL_COLOR_MAP = label_to_color_image(FULL_LABEL_MAP)
         ##########################
-        preprocess_dict = {'vgg19': vgg19.preprocess_input, 'resnet50': resnet50.preprocess_input}
-        backbone_dict = {'vgg19': vgg19.VGG19, 'resnet50': resnet50.ResNet50}
+        preprocess_dict = {'vgg19': vgg19.preprocess_input, 'resnet50': resnet50.preprocess_input, 'efficientnet': efficientnet.preprocess_input}
+        backbone_dict = {'vgg19': vgg19.VGG19, 'resnet50': resnet50.ResNet50, efficientnet.EfficientNetB7}
 
         preprocess_input = preprocess_dict.get(self._backbone, None)
         if process:
-            assert (self._backbone in ['vgg19', 'resnet50']), f"{self._backbone} is not supported"
+            assert (self._backbone in ['vgg19', 'resnet50', 'efficientnet']), f"{self._backbone} is not supported"
 
         convnet = backbone_dict[self._backbone](input_shape=(224, 224, 3),
                                                 include_top=False, weights='imagenet') if process else None
