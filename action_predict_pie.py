@@ -271,6 +271,10 @@ class ActionPredict:
         print("Generating {} features crop_type={} crop_mode={}\
               \nsave_path={}, backbone={} ".format(data_type, crop_type, crop_mode,
                                        save_path, self._backbone))
+
+        # backbone to savepath (todo keep?)
+        save_path = os.path.join(save_path, self._backbone)
+
         # load segmentation model
         segmodel_path = "deeplabv3_mnv2_cityscapes_train_2018_02_05.tar.gz"
         segmodel = DeepLabModel(segmodel_path)
@@ -283,7 +287,7 @@ class ActionPredict:
         FULL_COLOR_MAP = label_to_color_image(FULL_LABEL_MAP)
         ##########################
         preprocess_dict = {'vgg19': vgg19.preprocess_input, 'resnet50': resnet50.preprocess_input, 'efficientnet': efficientnet.preprocess_input}
-        backbone_dict = {'vgg19': vgg19.VGG19, 'resnet50': resnet50.ResNet50, efficientnet.EfficientNetB7}
+        backbone_dict = {'vgg19': vgg19.VGG19, 'resnet50': resnet50.ResNet50, 'efficientnet': efficientnet.EfficientNetB7}
 
         preprocess_input = preprocess_dict.get(self._backbone, None)
         if process:
