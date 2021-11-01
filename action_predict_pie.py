@@ -12,7 +12,7 @@ from tensorflow.keras.layers import Flatten, Average, Add
 from tensorflow.keras.layers import ConvLSTM2D, Conv2D
 from tensorflow.keras.models import Model, load_model
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint
-from tensorflow.keras.applications import vgg19, resnet50, efficientnet-
+from tensorflow.keras.applications import vgg19, resnet50, efficientnet
 from tensorflow.keras.layers import GlobalAveragePooling2D, GlobalMaxPooling2D, Lambda, dot, concatenate, Activation
 from tensorflow.keras.optimizers import Adam, SGD, RMSprop
 from tensorflow.keras import regularizers
