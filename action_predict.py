@@ -3400,7 +3400,7 @@ def attention_3d_block(hidden_states, dense_size=128, modality=''):
     attention_weights = Activation('softmax', name='attention_weight' + modality)(score)
     # (batch_size, time_steps, hidden_size) dot (batch_size, time_steps) => (batch_size, hidden_size)
     context_vector = dot([hidden_states, attention_weights], [1, 1], name='context_vector' + modality)
-    pre_activation = concatenate([context_vector, h_t], name='attention_output' + modality)-
+    pre_activation = concatenate([context_vector, h_t], name='attention_output' + modality)
     attention_vector = Dense(dense_size, use_bias=False, activation='tanh', name='attention_vector' + modality)(
         pre_activation)
     return attention_vector
