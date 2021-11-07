@@ -288,15 +288,9 @@ class ActionPredict:
         ##########################
         preprocess_dict = {'vgg19': vgg19.preprocess_input, 'resnet50': resnet50.preprocess_input,
                            'efficientnet': efficientnet.preprocess_input, 'mobilenet_v2': mobilenet_v2.preprocess_input}
-        backbone_dict = {'vgg19': vgg19.VGG19, 'resnet50': resnet50.ResNet50,
-                         'efficientnet': efficientnet.EfficientNetB7, 'mobilenet_v2': mobilenet_v2.MobileNetV2}
 
         preprocess_input = preprocess_dict.get(self._backbone, None)
-        if process:
-            assert (self._backbone in ['vgg19', 'resnet50', 'efficientnet']), f"{self._backbone} is not supported"
 
-        convnet = backbone_dict[self._backbone](input_shape=(224, 224, 3),
-                                                include_top=False, weights='imagenet') if process else None
         sequences = []
         bbox_seq = bbox_sequences.copy()
         i = -1
@@ -439,9 +433,6 @@ class ActionPredict:
                             raise ValueError('ERROR: Undefined value for crop_type {}!'.format(crop_type))
                     if preprocess_input is not None:
                         img_features = preprocess_input(img_features)
-                    if process:
-                        expanded_img = np.expand_dims(img_features, axis=0)
-                        img_features = convnet.predict(expanded_img)
                     # Save the file
                     if not os.path.exists(img_save_folder):
                         os.makedirs(img_save_folder)
