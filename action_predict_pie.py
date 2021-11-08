@@ -281,7 +281,7 @@ class ActionPredict:
         FULL_LABEL_MAP = np.arange(len(LABEL_NAMES)).reshape(len(LABEL_NAMES), 1)
         FULL_COLOR_MAP = label_to_color_image(FULL_LABEL_MAP)
         ##########################
-        preprocess_dict = {'vgg19': vgg19.preprocess_input, 'ResNet152': resnet.preprocess_input,
+        preprocess_dict = {'vgg19': vgg19.preprocess_input, 'resnet152': resnet.preprocess_input,
                            'efficientnet': efficientnet.preprocess_input, 'mobilenet_v2': mobilenet_v2.preprocess_input}
 
         backbone_dict = {'vgg19': vgg19.VGG19, 'resnet152': resnet.ResNet152,
@@ -335,7 +335,7 @@ class ActionPredict:
                         x = np.expand_dims(x, axis=0)
                         x = preprocess_input(x)
                         img_features = backbone_model.predict(x)
-                        img_features = tf.nn.avg_pool2d(img_features, ksize=[14, 14], strides=[1, 1, 1, 1],
+                        img_features = tf.nn.avg_pool2d(img_features, ksize=[7, 7], strides=[1, 1, 1, 1], # ksize=[14, 14]
                                                         padding='VALID') # check output size
                         img_features = tf.squeeze(img_features)
                         # with tf.compact.v1.Session():
