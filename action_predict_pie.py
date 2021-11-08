@@ -281,7 +281,7 @@ class ActionPredict:
         FULL_LABEL_MAP = np.arange(len(LABEL_NAMES)).reshape(len(LABEL_NAMES), 1)
         FULL_COLOR_MAP = label_to_color_image(FULL_LABEL_MAP)
         ##########################
-        preprocess_dict = {'vgg19': vgg19.preprocess_input, 'ResNet152': resnet.ResNet152.preprocess_input,
+        preprocess_dict = {'vgg19': vgg19.preprocess_input, 'ResNet152': resnet.preprocess_input,
                            'efficientnet': efficientnet.preprocess_input, 'mobilenet_v2': mobilenet_v2.preprocess_input}
 
         backbone_dict = {'vgg19': vgg19.VGG19, 'resnet50': resnet.ResNet152,
