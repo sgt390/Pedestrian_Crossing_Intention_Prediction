@@ -336,7 +336,7 @@ class ActionPredict:
                         x = preprocess_input(x)
                         img_features = backbone_model.predict(x)
                         img_features = tf.nn.avg_pool2d(img_features, ksize=[14, 14], strides=[1, 1, 1, 1],
-                                                        padding='VALID')
+                                                        padding='VALID') # check output size
                         img_features = tf.squeeze(img_features)
                         # with tf.compact.v1.Session():
                         img_features = img_features.numpy()
