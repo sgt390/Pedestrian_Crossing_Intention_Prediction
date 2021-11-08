@@ -31,9 +31,6 @@ import tarfile
 import os
 import cv2
 
-
-
-from tensorflow.keras.applications.vgg19 import VGG19
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.models import Model
 import numpy as np
@@ -265,14 +262,12 @@ class ActionPredict:
             Numpy array of visual features
             Tuple containing the size of features
         """
-        base_model = VGG19(weights='imagenet')
-        VGGmodel = Model(inputs=base_model.input, outputs=base_model.get_layer('block4_pool').output)
         # load the feature files if exists
         print("Generating {} features crop_type={} crop_mode={}\
               \nsave_path={}, backbone={}, process={} ".format(data_type, crop_type, crop_mode,
-                                       save_path, self._backbone, str(process)))
+                                                               save_path, self._backbone, str(process)))
 
-        # backbone to savepath (todo keep?)
+        # backbone to savepath
         save_path = os.path.join(save_path, self._backbone)
 
         # load segmentation model
@@ -288,6 +283,12 @@ class ActionPredict:
         ##########################
         preprocess_dict = {'vgg19': vgg19.preprocess_input, 'resnet50': resnet50.preprocess_input,
                            'efficientnet': efficientnet.preprocess_input, 'mobilenet_v2': mobilenet_v2.preprocess_input}
+
+        backbone_dict = {'vgg19': vgg19.VGG19, 'resnet50': resnet50.ResNet50,
+                         'efficientnet': efficientnet.EfficientNetB7, 'mobilenet_v2': mobilenet_v2.MobileNetV2}
+
+        base_model = backbone_dict[self._backbone](input_shape=(224, 224, 3), weights='imagenet')
+        backbone_model = Model(inputs=base_model.input, outputs=base_model.get_layer('block4_pool').output)
 
         preprocess_input = preprocess_dict.get(self._backbone, None)
 
@@ -331,9 +332,8 @@ class ActionPredict:
                         img = image.load_img(imp, target_size=(224, 224))
                         x = image.img_to_array(img)
                         x = np.expand_dims(x, axis=0)
-                        x = tf.keras.applications.vgg19.preprocess_input(x)
-                        block4_pool_features = VGGmodel.predict(x)
-                        img_features = block4_pool_features
+                        x = preprocess_input(x)
+                        img_features = backbone_model.predict(x)
                         img_features = tf.nn.avg_pool2d(img_features, ksize=[14, 14], strides=[1, 1, 1, 1],
                                                         padding='VALID')
                         img_features = tf.squeeze(img_features)
@@ -355,25 +355,15 @@ class ActionPredict:
                         seg_image = cv2.cvtColor(seg_image, cv2.COLOR_BGR2RGB)
                         seg_image = cv2.addWeighted(resized_im, 0.5, seg_image, 0.5, 0)
                         img_data = cv2.resize(seg_image, (ori_dim[1], ori_dim[0]))
-
-                        # ped_mask = np.zeros((b_org[3]-b_org[1],b_org[2]-b_org[0], 3), dtype="uint8")
-                        # ped_mask = init_canvas(b_org[3]-b_org[1], b_org[2]-b_org[0], color=(0, 0, 255))
-                        # img_data[b_org[1]:b_org[3], b_org[0]:b_org[2], :]
                         ## mask_img_data + pd highlight ---> final_mask_img_data
                         ped_mask = init_canvas(b[2] - b[0], b[3] - b[1], color=(255, 255, 255))
-                        # ped_fuse = cv2.addWeighted(img_data[b[1]:b[3], b[0]:b[2]], 0.5, ped_mask, 0.5, 0)
                         img_data[b[1]:b[3], b[0]:b[2]] = ped_mask
-                        # cv2.imshow('mask_demo',img_data)
-                        # cv2.waitkey(0)
-                        # cv2.destroyAllWindows()
                         img_features = cv2.resize(img_data, target_dim)
                         img = Image.fromarray(cv2.cvtColor(img_features, cv2.COLOR_BGR2RGB))
-                        # img = image.load_img(imp, target_size=(224, 224))
                         x = image.img_to_array(img)
                         x = np.expand_dims(x, axis=0)
-                        x = tf.keras.applications.vgg19.preprocess_input(x)
-                        block4_pool_features = VGGmodel.predict(x)
-                        img_features = block4_pool_features
+                        x = preprocess_input(x)
+                        img_features = backbone_model.predict(x)
                         img_features = tf.nn.avg_pool2d(img_features, ksize=[14, 14], strides=[1, 1, 1, 1],
                                                         padding='VALID')
                         img_features = tf.squeeze(img_features)
@@ -382,31 +372,6 @@ class ActionPredict:
                         if flip_image:
                             img_features = cv2.flip(img_features, 1)
 
-                    elif crop_type == 'mask':
-                        img_data = cv2.imread(imp)
-                        ori_dim = img_data.shape
-                        # bbox = jitter_bbox(imp, [b], 'enlarge', crop_resize_ratio)[0]
-                        # bbox = squarify(bbox, 1, img_data.shape[1])
-                        # bbox = list(map(int, bbox[0:4]))
-                        b = list(map(int, b[0:4]))
-                        ## img_data --- > mask_img_data (deeplabV3)
-                        original_im = Image.fromarray(cv2.cvtColor(img_data, cv2.COLOR_BGR2RGB))
-                        resized_im, seg_map = segmodel.run(original_im)
-                        resized_im = np.array(resized_im)
-                        seg_image = label_to_color_image(seg_map).astype(np.uint8)
-                        seg_image = cv2.cvtColor(seg_image, cv2.COLOR_BGR2RGB)
-                        seg_image = cv2.addWeighted(resized_im, 0.5, seg_image, 0.5, 0)
-                        img_data = cv2.resize(seg_image, (ori_dim[1], ori_dim[0]))
-
-                        ped_mask = init_canvas(b[2] - b[0], b[3] - b[1], color=(255, 255, 255))
-                        # ped_fuse = cv2.addWeighted(img_data[b[1]:b[3], b[0]:b[2]], 0.5, ped_mask, 0.5, 0)
-                        img_data[b[1]:b[3], b[0]:b[2]] = ped_mask
-                        # cv2.imshow('mask_demo',img_data)
-                        # cv2.waitkey(0)
-                        # cv2.destroyAllWindows()
-                        img_features = cv2.resize(img_data, target_dim)
-                        if flip_image:
-                            img_features = cv2.flip(img_features, 1)
                     else:
                         img_data = cv2.imread(imp)
                         if flip_image:
@@ -431,26 +396,13 @@ class ActionPredict:
                             img_features = img_pad(cropped_image, mode='pad_resize', size=target_dim[0])
                         else:
                             raise ValueError('ERROR: Undefined value for crop_type {}!'.format(crop_type))
-                    if preprocess_input is not None:
-                        img_features = preprocess_input(img_features)
+                    # if preprocess_input is not None: # todo ?
+                    #     img_features = preprocess_input(img_features) # todo ?
                     # Save the file
                     if not os.path.exists(img_save_folder):
                         os.makedirs(img_save_folder)
                     with open(img_save_path, 'wb') as fid:
                         pickle.dump(img_features, fid, pickle.HIGHEST_PROTOCOL)
-
-                # if using the generator save the cached features path and size of the features                                   
-                if process and not self._generator:
-                    if self._global_pooling == 'max':
-                        img_features = np.squeeze(img_features)
-                        img_features = np.amax(img_features, axis=0)
-                        img_features = np.amax(img_features, axis=0)
-                    elif self._global_pooling == 'avg':
-                        img_features = np.squeeze(img_features)
-                        img_features = np.average(img_features, axis=0)
-                        img_features = np.average(img_features, axis=0)
-                    else:
-                        img_features = img_features.ravel()
 
                 if self._generator:
                     img_seq.append(img_save_path)
@@ -1529,6 +1481,7 @@ class MASK_PCPA_4_2D_NOGLOBAL(ActionPredict):
         net_model.summary()
         plot_model(net_model, to_file='MASK_PCPA_4_2D_NOGLOBAL.png')
         return net_model
+
 
 def action_prediction(model_name):
     for cls in ActionPredict.__subclasses__():
