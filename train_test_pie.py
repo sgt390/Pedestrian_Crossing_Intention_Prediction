@@ -44,9 +44,9 @@ def write_to_yaml(yaml_path=None, data=None):
         yaml.dump(data, yamlfile)
 
 
-def start_wandb(config, dataset_name, model_name):
+def start_wandb(config, dataset_name, model_name, backbonename=''):
     wandb_run = wandb.init(project='pcip', entity='sgt390', reinit=True, config=config)
-    wandb.run.name = f'{model_name}_{dataset_name}'
+    wandb.run.name = f'{model_name}_{dataset_name}_{backbonename}'
     return wandb_run
 
 
@@ -123,7 +123,7 @@ def run(config_file=None):
             imdb = JAAD(data_path='./JAAD/')
 
         # log run (requires "wandb login")
-        wandb_run = start_wandb(config=configs['data_opts'], dataset_name=dataset, model_name=model_name)
+        wandb_run = start_wandb(config=configs['data_opts'], dataset_name=dataset, model_name=model_name, backbonename=configs['net_opts']['backbone'])
         wandb.config.update(configs['model_opts'])
         wandb.config.update(configs['train_opts'])
 
