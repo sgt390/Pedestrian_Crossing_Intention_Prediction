@@ -287,8 +287,9 @@ class ActionPredict:
         backbone_dict = {'vgg19': vgg19.VGG19, 'resnet50': resnet50.ResNet50,
                          'efficientnet': efficientnet.EfficientNetB7, 'mobilenet_v2': mobilenet_v2.MobileNetV2}
 
-        base_model = backbone_dict[self._backbone](input_shape=(224, 224, 3), weights='imagenet')
-        backbone_model = Model(inputs=base_model.input, outputs=base_model.get_layer('block4_pool').output)
+        base_model = backbone_dict[self._backbone](input_shape=(224, 224, 3), weights='imagenet', include_top=False)
+        backbone_model = base_model
+        # backbone_model = Model(inputs=base_model.input, outputs=base_model.get_layer('block4_pool').output)
 
         preprocess_input = preprocess_dict.get(self._backbone, None)
 
