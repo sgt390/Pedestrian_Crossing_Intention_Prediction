@@ -284,7 +284,7 @@ class ActionPredict:
         preprocess_dict = {'vgg19': vgg19.preprocess_input, 'ResNet152': resnet.preprocess_input,
                            'efficientnet': efficientnet.preprocess_input, 'mobilenet_v2': mobilenet_v2.preprocess_input}
 
-        backbone_dict = {'vgg19': vgg19.VGG19, 'resnet50': resnet.ResNet152,
+        backbone_dict = {'vgg19': vgg19.VGG19, 'resnet152': resnet.ResNet152,
                          'efficientnet': efficientnet.EfficientNetB7, 'mobilenet_v2': mobilenet_v2.MobileNetV2}
 
         base_model = backbone_dict[self._backbone](input_shape=(224, 224, 3), weights='imagenet', include_top=False)
@@ -365,7 +365,7 @@ class ActionPredict:
                         x = np.expand_dims(x, axis=0)
                         x = preprocess_input(x)
                         img_features = backbone_model.predict(x)
-                        img_features = tf.nn.avg_pool2d(img_features, ksize=[7, 7], strides=[1, 1, 1, 1], # ksize=[14, 14]
+                        img_features = tf.nn.avg_pool2d(img_features, ksize=[7, 7], strides=[1, 1, 1, 1], #todo adapt for 14,14? ksize=[14, 14]
                                                         padding='VALID')
                         img_features = tf.squeeze(img_features)
                         # with tf.compact.v1.Session():
