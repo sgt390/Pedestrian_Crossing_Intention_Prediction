@@ -365,7 +365,7 @@ class ActionPredict:
                         x = np.expand_dims(x, axis=0)
                         x = preprocess_input(x)
                         img_features = backbone_model.predict(x)
-                        img_features = tf.nn.avg_pool2d(img_features, ksize=[14, 14], strides=[1, 1, 1, 1],
+                        img_features = tf.nn.avg_pool2d(img_features, ksize=[7, 7], strides=[1, 1, 1, 1], # ksize=[14, 14]
                                                         padding='VALID')
                         img_features = tf.squeeze(img_features)
                         # with tf.compact.v1.Session():
