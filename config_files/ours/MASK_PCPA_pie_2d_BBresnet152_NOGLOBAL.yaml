@@ -1,6 +1,6 @@
 model_opts:
   model: MASK_PCPA_4_2D
-  obs_input_type: [local_context_cnn, mask_cnn, pose, box, speed]
+  obs_input_type: [local_context_cnn, pose, box, speed]
   apply_class_weights: True
   normalize_boxes: True
   generator: True
@@ -9,7 +9,7 @@ net_opts:
   global_pooling: avg
   regularizer_val: 0.0001
   cell_type: gru
-  backbone: efficientnet
+  backbone: resnet152
 exp_opts:
   datasets: [pie]
   batch_size: [2, 2]

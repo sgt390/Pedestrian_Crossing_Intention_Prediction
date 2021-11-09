@@ -1,6 +1,6 @@
 model_opts:
-  model: MASK_PCPA_4_2D
-  obs_input_type: [local_context_cnn, mask_cnn, pose, box, speed]
+  model: MASK_PCPA_4_2D_NOGLOBAL
+  obs_input_type: [local_context_cnn, pose, box, speed]
   apply_class_weights: True
   normalize_boxes: True
   generator: True
