@@ -294,6 +294,7 @@ class ActionPredict:
         if self._backbone == 'vit':
             model_inputs['image_size'] = 224
             del model_inputs['input_shape']
+            del model_inputs['weights']
         base_model = backbone_dict[self._backbone](**model_inputs)
         backbone_model = base_model
         # backbone_model = Model(inputs=base_model.input, outputs=base_model.get_layer('block4_pool').output)
