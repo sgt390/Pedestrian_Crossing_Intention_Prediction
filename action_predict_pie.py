@@ -401,7 +401,7 @@ class ActionPredict:
                         img = Image.fromarray(cv2.cvtColor(img_features, cv2.COLOR_BGR2RGB))
                         x = image.img_to_array(img)
                         x = np.expand_dims(x, axis=0)
-                        x = vit.preprocess_input(x) # ! global uses vit / local still uses default cnn
+                        x = vit.preprocess_inputs(x) # ! global uses vit / local still uses default cnn
                         img_features = vit_model.predict(x) # ! generalize somehow? line above as well TODO fix inputs of next layer (768 out)
                         img_features = tf.squeeze(img_features)
                         img_features = img_features.numpy()
