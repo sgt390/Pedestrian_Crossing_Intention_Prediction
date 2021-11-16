@@ -20,6 +20,7 @@ from tensorflow.keras import backend as K
 from tensorflow.keras.utils import Sequence
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.metrics import roc_auc_score, roc_curve, precision_recall_curve
+from vit_keras import vit
 from sklearn.svm import LinearSVC
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -282,10 +283,12 @@ class ActionPredict:
         FULL_COLOR_MAP = label_to_color_image(FULL_LABEL_MAP)
         ##########################
         preprocess_dict = {'vgg19': vgg19.preprocess_input, 'resnet152': resnet.preprocess_input,
-                           'efficientnet': efficientnet.preprocess_input, 'mobilenet_v2': mobilenet_v2.preprocess_input}
+                           'efficientnet': efficientnet.preprocess_input, 'mobilenet_v2': mobilenet_v2.preprocess_input,
+                           'vit': vit.preprocess_inputs}
 
         backbone_dict = {'vgg19': vgg19.VGG19, 'resnet152': resnet.ResNet152,
-                         'efficientnet': efficientnet.EfficientNetB7, 'mobilenet_v2': mobilenet_v2.MobileNetV2}
+                         'efficientnet': efficientnet.EfficientNetB7, 'mobilenet_v2': mobilenet_v2.MobileNetV2,
+                         'vit': vit.vit_b16}
 
         base_model = backbone_dict[self._backbone](input_shape=(224, 224, 3), weights='imagenet', include_top=False)
         backbone_model = base_model
@@ -369,6 +372,35 @@ class ActionPredict:
                                                         padding='VALID')
                         img_features = tf.squeeze(img_features)
                         # with tf.compact.v1.Session():
+                        img_features = img_features.numpy()
+                        if flip_image:
+                            img_features = cv2.flip(img_features, 1)
+
+                    elif crop_type == 'mask_vit':
+                        img_data = cv2.imread(imp)
+                        ori_dim = img_data.shape
+                        # bbox = jitter_bbox(imp, [b], 'enlarge', crop_resize_ratio)[0]
+                        # bbox = squarify(bbox, 1, img_data.shape[1])
+                        # bbox = list(map(int, bbox[0:4]))
+                        b = list(map(int, b[0:4]))
+                        ## img_data --- > mask_img_data (deeplabV3)
+                        original_im = Image.fromarray(cv2.cvtColor(img_data, cv2.COLOR_BGR2RGB))
+                        resized_im, seg_map = segmodel.run(original_im)
+                        resized_im = np.array(resized_im)
+                        seg_image = label_to_color_image(seg_map).astype(np.uint8)
+                        seg_image = cv2.cvtColor(seg_image, cv2.COLOR_BGR2RGB)
+                        seg_image = cv2.addWeighted(resized_im, 0.5, seg_image, 0.5, 0)
+                        img_data = cv2.resize(seg_image, (ori_dim[1], ori_dim[0]))
+                        ## mask_img_data + pd highlight ---> final_mask_img_data
+                        ped_mask = init_canvas(b[2] - b[0], b[3] - b[1], color=(255, 255, 255))
+                        img_data[b[1]:b[3], b[0]:b[2]] = ped_mask
+                        img_features = cv2.resize(img_data, target_dim)
+                        img = Image.fromarray(cv2.cvtColor(img_features, cv2.COLOR_BGR2RGB))
+                        x = image.img_to_array(img)
+                        x = np.expand_dims(x, axis=0)
+                        x = preprocess_input(x)
+                        img_features = backbone_model.predict(x) # TODO fix inputs of next layer (768 out)
+                        img_features = tf.squeeze(img_features)
                         img_features = img_features.numpy()
                         if flip_image:
                             img_features = cv2.flip(img_features, 1)
@@ -722,6 +754,8 @@ class ActionPredict:
             data_gen_params['crop_mode'] = 'pad_resize'
         elif 'mask_cnn' in feature_type:
             data_gen_params['crop_type'] = 'mask_cnn'
+        elif 'mask_vit' in feature_type:
+            data_gen_params['crop_type'] = 'mask_vit'
         elif 'mask' in feature_type:
             data_gen_params['crop_type'] = 'mask'
             # data_gen_params['crop_mode'] = 'pad_resize'
@@ -1489,6 +1523,155 @@ def action_prediction(model_name):
         if cls.__name__ == model_name:
             return cls
     raise Exception('Model {} is not valid!'.format(model_name))
+
+
+class MASK_PCPA_4_2D_ViT(ActionPredict):
+    """
+    HYBRID MASK_PCPA_ViT
+
+    Args:
+        num_hidden_units: Number of recurrent hidden layers
+        cell_type: Type of RNN cell
+        **kwargs: Description
+    """
+
+    def __init__(self,
+                 num_hidden_units=256,
+                 cell_type='gru',
+                 **kwargs):
+        """
+        Class init function
+
+        Args:
+            num_hidden_units: Number of recurrent hidden layers
+            cell_type: Type of RNN cell
+            **kwargs: Description
+        """
+        super().__init__(**kwargs)
+        # Network parameters
+        self._num_hidden_units = num_hidden_units
+        self._rnn = self._gru if cell_type == 'gru' else self._lstm
+        self._rnn_cell = GRUCell if cell_type == 'gru' else LSTMCell
+
+    def get_data(self, data_type, data_raw, model_opts):
+        assert model_opts['obs_length'] == 16
+        model_opts['normalize_boxes'] = False
+        self._generator = model_opts.get('generator', False)
+        data_type_sizes_dict = {}
+        process = model_opts.get('process', True)
+        dataset = model_opts['dataset']
+        data, neg_count, pos_count = self.get_data_sequence(data_type, data_raw, model_opts)
+
+        data_type_sizes_dict['box'] = data['box'].shape[1:]
+        if 'speed' in data.keys():
+            data_type_sizes_dict['speed'] = data['speed'].shape[1:]
+        # if 'context_cnn' in data.keys():
+        #     data_type_sizes_dict['context_cnn'] = data['context_cnn'].shape[1:]
+
+        # Store the type and size of each image
+        _data = []
+        data_sizes = []
+        data_types = []
+
+        model_opts_3d = model_opts.copy()
+
+        for d_type in model_opts['obs_input_type']:
+            if 'local' in d_type or 'context' in d_type or 'mask' in d_type:
+                if self._backbone == 'c3d':
+                    model_opts_3d['target_dim'] = (112, 112)
+                model_opts_3d['process'] = False
+                features, feat_shape = self.get_context_data(model_opts_3d, data, data_type, d_type)
+            elif 'pose' in d_type:
+                path_to_pose, _ = get_path(save_folder='poses',
+                                           dataset=dataset,
+                                           save_root_folder='data/features')
+                features = get_pose(data['image'],
+                                    data['ped_id'],
+                                    data_type=data_type,
+                                    file_path=path_to_pose,
+                                    dataset=model_opts['dataset'])
+                feat_shape = features.shape[1:]
+            else:
+                features = data[d_type]
+                feat_shape = features.shape[1:]
+            _data.append(features)
+            data_sizes.append(feat_shape)
+            data_types.append(d_type)
+        # create the final data file to be returned
+        if self._generator:
+            _data = (DataGenerator(data=_data,
+                                   labels=data['crossing'],
+                                   data_sizes=data_sizes,
+                                   process=process,
+                                   global_pooling=None,
+                                   input_type_list=model_opts['obs_input_type'],
+                                   batch_size=model_opts['batch_size'],
+                                   shuffle=data_type != 'test',
+                                   to_fit=data_type != 'test'), data['crossing'])  # set y to None
+        # global_pooling=self._global_pooling,
+        else:
+            _data = (_data, data['crossing'])
+
+        return {'data': _data,
+                'ped_id': data['ped_id'],
+                'tte': data['tte'],
+                'image': data['image'],
+                'data_params': {'data_types': data_types, 'data_sizes': data_sizes},
+                'count': {'neg_count': neg_count, 'pos_count': pos_count}}
+
+    def get_model(self, data_params):
+        return_sequence = True
+        data_sizes = data_params['data_sizes']
+        data_types = data_params['data_types']
+        network_inputs = []
+        encoder_outputs = []
+        core_size = len(data_sizes)
+
+        # conv3d_model = self._3dconv()
+        # network_inputs.append(conv3d_model.input)
+        #
+        attention_size = self._num_hidden_units
+        for i in range(0, core_size):
+            network_inputs.append(Input(shape=data_sizes[i], name='input_' + data_types[i]))
+
+        x = self._rnn(name='enc0_' + data_types[0], r_sequence=return_sequence)(network_inputs[0])
+        encoder_outputs.append(x)
+        x = self._rnn(name='enc1_' + data_types[1], r_sequence=return_sequence)(network_inputs[1])
+        encoder_outputs.append(x)
+        x = self._rnn(name='enc2_' + data_types[2], r_sequence=return_sequence)(network_inputs[2])
+        current = [x, network_inputs[3]]
+        x = Concatenate(name='concat_early3', axis=2)(current)
+        x = self._rnn(name='enc3_' + data_types[3], r_sequence=return_sequence)(x)
+        current = [x, network_inputs[4]]
+        x = Concatenate(name='concat_early4', axis=2)(current)
+        x = self._rnn(name='enc4_' + data_types[4], r_sequence=return_sequence)(x)
+        encoder_outputs.append(x)
+
+        if len(encoder_outputs) > 1:
+            att_enc_out = []
+            # for recurrent branches apply many-to-one attention block
+            for i, enc_out in enumerate(encoder_outputs[0:]):
+                x = attention_3d_block(enc_out, dense_size=attention_size, modality='_' + data_types[i])
+                x = Dropout(0.5)(x)
+                x = Lambda(lambda x: K.expand_dims(x, axis=1))(x)
+                att_enc_out.append(x)
+            # aplly many-to-one attention block to the attended modalities
+            x = Concatenate(name='concat_modalities', axis=1)(att_enc_out)
+            encodings = attention_3d_block(x, dense_size=attention_size, modality='_modality')
+
+        else:
+            encodings = encoder_outputs[0]
+            encodings = attention_3d_block(encodings, dense_size=attention_size, modality='_modality')
+
+        model_output = Dense(1, activation='sigmoid',
+                             name='output_dense',
+                             activity_regularizer=regularizers.l2(0.001))(encodings)
+
+        net_model = Model(inputs=network_inputs,
+                          outputs=model_output)
+        net_model.summary()
+        plot_model(net_model, to_file='MASK_PCPA_4_2D_ViT.png')
+        return net_model
 
 
 class DataGenerator(Sequence):
