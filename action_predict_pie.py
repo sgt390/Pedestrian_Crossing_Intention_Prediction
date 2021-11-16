@@ -290,11 +290,11 @@ class ActionPredict:
                          'efficientnet': efficientnet.EfficientNetB7, 'mobilenet_v2': mobilenet_v2.MobileNetV2,
                          'vit': vit.vit_b16}
 
-        model_inputs = {'input_shape': (224, 224, 3), 'weights': 'imagenet', 'include_top': False}
-        if self._backbone == 'vit':
-            model_inputs['image_size'] = 224
-            del model_inputs['input_shape']
-            del model_inputs['weights']
+        if self._backbone == 'vit': # ViT is not included in keras - requires different inputs
+            model_inputs = {'image_size': 244, 'pretrained': True, 'include_top': False, 'pretrained_top': False}
+        else:
+            model_inputs = {'input_shape': (224, 224, 3), 'weights': 'imagenet', 'include_top': False}
+
         base_model = backbone_dict[self._backbone](**model_inputs)
         backbone_model = base_model
         # backbone_model = Model(inputs=base_model.input, outputs=base_model.get_layer('block4_pool').output)
