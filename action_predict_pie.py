@@ -290,7 +290,11 @@ class ActionPredict:
                          'efficientnet': efficientnet.EfficientNetB7, 'mobilenet_v2': mobilenet_v2.MobileNetV2,
                          'vit': vit.vit_b16}
 
-        base_model = backbone_dict[self._backbone](input_shape=(224, 224, 3), weights='imagenet', include_top=False)
+        model_inputs = {'input_shape': (224, 224, 3), 'weights': 'imagenet', 'include_top': False}
+        if self._backbone == 'vit':
+            model_inputs['image_size'] = 224
+            del model_inputs['input_shape']
+        base_model = backbone_dict[self._backbone](**model_inputs)
         backbone_model = base_model
         # backbone_model = Model(inputs=base_model.input, outputs=base_model.get_layer('block4_pool').output)
 
