@@ -288,12 +288,12 @@ class ActionPredict:
         backbone_dict = {'vgg19': vgg19.VGG19, 'resnet152': resnet.ResNet152,
                          'efficientnet': efficientnet.EfficientNetB7, 'mobilenet_v2': mobilenet_v2.MobileNetV2}
 
-        if self._backbone == 'vit': # ViT is not included in keras - requires different inputs
-            model_inputs = {'image_size': 224, 'pretrained': True, 'include_top': False, 'pretrained_top': False}
-        else:
-            model_inputs = {'input_shape': (224, 224, 3), 'weights': 'imagenet', 'include_top': False}
+        model_inputs = {'input_shape': (224, 224, 3), 'weights': 'imagenet', 'include_top': False}
+        vit_model_inputs = {'image_size': 224, 'pretrained': True, 'include_top': False, 'pretrained_top': False}
 
         base_model = backbone_dict[self._backbone](**model_inputs)
+        vit_model = vit.vit_b16(**vit_model_inputs)
+
         backbone_model = base_model
         # backbone_model = Model(inputs=base_model.input, outputs=base_model.get_layer('block4_pool').output)
 
@@ -401,8 +401,8 @@ class ActionPredict:
                         img = Image.fromarray(cv2.cvtColor(img_features, cv2.COLOR_BGR2RGB))
                         x = image.img_to_array(img)
                         x = np.expand_dims(x, axis=0)
-                        x = vit.vit_b16.preprocess_input(x) # ! global uses vit / local still uses default cnn
-                        img_features = vit.vit_b16().predict(x) # ! generalize somehow? line above as well TODO fix inputs of next layer (768 out)
+                        x = vit.preprocess_input(x) # ! global uses vit / local still uses default cnn
+                        img_features = vit_model.predict(x) # ! generalize somehow? line above as well TODO fix inputs of next layer (768 out)
                         img_features = tf.squeeze(img_features)
                         img_features = img_features.numpy()
                         if flip_image:
