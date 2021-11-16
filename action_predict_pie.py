@@ -291,7 +291,7 @@ class ActionPredict:
                          'vit': vit.vit_b16}
 
         if self._backbone == 'vit': # ViT is not included in keras - requires different inputs
-            model_inputs = {'image_size': 244, 'pretrained': True, 'include_top': False, 'pretrained_top': False}
+            model_inputs = {'image_size': 224, 'pretrained': True, 'include_top': False, 'pretrained_top': False}
         else:
             model_inputs = {'input_shape': (224, 224, 3), 'weights': 'imagenet', 'include_top': False}
 
