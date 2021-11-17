@@ -315,7 +315,7 @@ class ActionPredict:
 
                 # Modify the path depending on crop mode
                 if crop_type == 'none':
-                    img_save_path = os.path.join(img_save_folder, img_name + '.pkl')
+                    img_save_path = os.path.join(img_save_folder, img_name + '_n.pkl')
                 else:
                     img_save_path = os.path.join(img_save_folder, img_name + '_' + p[0] + '.pkl')
 
@@ -1913,6 +1913,8 @@ class DataGenerator(Sequence):
                         else:
                             if self.stack_feats and 'flow' in input_type:
                                 features_batch[i, ..., j * num_ch:j * num_ch + num_ch] = img_features
+                            elif 'scene_context' in input_type:
+                                features_batch[i, j,] = tf.reshape(img_features, (224,224,3))
                             else:
                                 features_batch[i, j,] = img_features
                 else:
