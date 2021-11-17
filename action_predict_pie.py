@@ -1631,10 +1631,10 @@ class MASK_PCPA_4_2D_CNN(ActionPredict):
         for i in range(0, core_size):
             network_inputs.append(Input(shape=data_sizes[i], name='input_' + data_types[i]))
 
-        x = self._3dconv()(network_inputs[0]) #4321
-        x = self._rnn(name='enc0_' + data_types[0], r_sequence=return_sequence)(x)
+        x = self._rnn(name='enc0_' + data_types[0], r_sequence=return_sequence)(network_inputs[0])
         encoder_outputs.append(x)
-        x = self._rnn(name='enc1_' + data_types[1], r_sequence=return_sequence)(network_inputs[1])
+        x = self._3dconv()(network_inputs[1])
+        x = self._rnn(name='enc1_' + data_types[1], r_sequence=return_sequence)(x)
         encoder_outputs.append(x)
         x = self._rnn(name='enc2_' + data_types[2], r_sequence=return_sequence)(network_inputs[2])
         current = [x, network_inputs[3]]
