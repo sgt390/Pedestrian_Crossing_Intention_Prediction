@@ -1573,7 +1573,7 @@ class MASK_PCPA_4_2D_CNN(ActionPredict):
         model_opts_3d = model_opts.copy()
 
         for d_type in model_opts['obs_input_type']:
-            if 'local' in d_type or 'context' in d_type or 'mask' in d_type:
+            if 'local' in d_type or 'context' in d_type or 'mask' in d_type or 'scene' in d_type:
                 if self._backbone == 'c3d':
                     model_opts_3d['target_dim'] = (112, 112)
                 model_opts_3d['process'] = False
