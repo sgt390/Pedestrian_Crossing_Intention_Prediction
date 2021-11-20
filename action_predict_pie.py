@@ -2,7 +2,7 @@ import time
 import yaml
 import wget
 from utils import *
-from base_models import AlexNet, C3DNet, convert_to_fcn, C3DNet2
+from base_models import AlexNet, C3DNet, convert_to_fcn, C3DNet2, SIMPLE_CNN
 from base_models import I3DNet
 from tensorflow.keras.layers import Input, Concatenate, Dense
 from tensorflow.keras.layers import GRU, LSTM, GRUCell
@@ -1549,7 +1549,7 @@ class MASK_PCPA_4_2D_CNN(ActionPredict):
         self._num_hidden_units = num_hidden_units
         self._rnn = self._gru if cell_type == 'gru' else self._lstm
         self._rnn_cell = GRUCell if cell_type == 'gru' else LSTMCell
-        self._3dconv = C3DNet if self._backbone == 'c3d' else I3DNet
+        self._3dconv = SIMPLE_CNN
 
     def get_data(self, data_type, data_raw, model_opts):
         assert model_opts['obs_length'] == 16
