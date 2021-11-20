@@ -1636,7 +1636,7 @@ class MASK_PCPA_4_2D_CNN(ActionPredict):
         encoder_outputs.append(x)
         x = self._3dconv()(network_inputs[1])
 
-        x = tf.nn.avg_pool3d(x, ksize=[8, 8, 16], strides=[1, 1, 1, 1, 1], padding='VALID')
+        x = tf.nn.avg_pool3d(x, ksize=[4, 56, 56, 16], strides=[1, 1, 1, 1, 1], padding='VALID')
         x = tf.squeeze(x)
         x = self._rnn(name='enc1_' + data_types[1], r_sequence=return_sequence)(x)
         encoder_outputs.append(x)
