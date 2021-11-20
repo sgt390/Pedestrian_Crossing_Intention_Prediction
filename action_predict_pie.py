@@ -1634,6 +1634,10 @@ class MASK_PCPA_4_2D_CNN(ActionPredict):
 
         x = self._rnn(name='enc0_' + data_types[0], r_sequence=return_sequence)(network_inputs[0])
         encoder_outputs.append(x)
+        img_features = tf.nn.avg_pool2d(img_features, ksize=[8, 8], strides=[1, 1, 1, 1],
+                                        # todo adapt for 14,14? ksize=[14, 14]
+                                        padding='VALID')
+        img_features = tf.squeeze(img_features)
         x = self._3dconv()(network_inputs[1])
         x = self._rnn(name='enc1_' + data_types[1], r_sequence=return_sequence)(tf.squeeze(x, [4]))
         encoder_outputs.append(x)
