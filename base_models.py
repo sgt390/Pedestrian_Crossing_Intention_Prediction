@@ -496,8 +496,7 @@ def SIMPLE_CNN(freeze_conv_layers=False, weights=None,
     model = MaxPooling3D(pool_size=(4, 4, 4), strides=(2, 2, 2), padding='valid', name='pool2')(model)
     # 2nd layer group
     model = Conv3D(8, 3, activation='relu', padding='same', name='conv3')(model)
-    model = MaxPooling3D(pool_size=(3, 27, 27), strides=(2, 2, 2), padding='valid', name='pool3')(model)
-    model = MaxPooling3D(pool_size=(15, 15, 8), strides=(2, 2, 2), padding='valid', name='pool4')(model)
+    model = MaxPooling3D(pool_size=(3, 27, 27, 8), strides=(2, 2, 2, 8), padding='valid', name='pool3')(model)
 
     net_model = Model(input_data, model)
 
