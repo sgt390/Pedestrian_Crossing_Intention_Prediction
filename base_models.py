@@ -9,6 +9,7 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Concatenate, Dense
 import tensorflow.keras.backend as K
 
+
 def AlexNet(include_top=True,
             weights=None,
             input_tensor=None,
@@ -98,7 +99,7 @@ def convert_to_fcn(model, classes=2, activation='softmax',
 
 
 def C3DNet(freeze_conv_layers=False, weights=None,
-           dense_activation='softmax', dropout=0.5, include_top=False,input_data = Input(shape=(16, 112, 112, 3))):
+           dense_activation='softmax', dropout=0.5, include_top=False, input_data=Input(shape=(16, 112, 112, 3))):
     """
     C3D model implementation. Source: https://github.com/adamcasson/c3d
     Reference: Du Tran, Lubomir Bourdev, Rob Fergus, Lorenzo Torresani,and Manohar Paluri. 
@@ -159,7 +160,7 @@ def C3DNet(freeze_conv_layers=False, weights=None,
 
 
 def C3DNet2(freeze_conv_layers=False, weights=None,
-           dense_activation='softmax', dropout=0.5, include_top=False,input_data=Input(shape=(16, 112, 112, 3))):
+            dense_activation='softmax', dropout=0.5, include_top=False, input_data=Input(shape=(16, 112, 112, 3))):
     """
     C3D model implementation. Source: https://github.com/adamcasson/c3d
     Reference: Du Tran, Lubomir Bourdev, Rob Fergus, Lorenzo Torresani,and Manohar Paluri.
@@ -220,6 +221,7 @@ def C3DNet2(freeze_conv_layers=False, weights=None,
 
     return net_model
 
+
 def I3DNet(freeze_conv_layers=False, weights=None, classes=1,
            dense_activation='softmax', dropout=0.5, num_channels=3, include_top=False):
     """
@@ -236,6 +238,7 @@ def I3DNet(freeze_conv_layers=False, weights=None, classes=1,
     Returns:
         I3D model
     """
+
     def conv3d_bn(x,
                   filters,
                   num_frames,
@@ -436,7 +439,6 @@ def I3DNet(freeze_conv_layers=False, weights=None, classes=1,
 
     x_concatenate = Concatenate(axis=channel_axis, name='Mixed_5c')([branch_0, branch_1, branch_2, branch_3])
 
-
     # create model
     if include_top:
         # Classification block
@@ -476,28 +478,20 @@ def I3DNet(freeze_conv_layers=False, weights=None, classes=1,
     return net_model
 
 
-def SIMPLE_CNN(freeze_conv_layers=False, weights=None,
-           dense_activation='softmax', dropout=0.5, include_top=False,input_data = Input(shape=(16, 112, 112, 3))):
+def SIMPLE_CNN(input_data=Input(shape=(16, 224, 224, 3))):
     """
     Simple 2d cnn
     Args:
-        freeze_conv_layers: Whether to freeze convolutional layers at the time of training
-        dense_activation: Activation of the last layer
-        dropout: Dropout of dense layers
-        include_top: Whether to add fc layers
+        input_data
     Returns:
         CNN model
     """
-    # input_data = Input(shape=(16, 112, 112, 3))
-    model = Conv3D(32, 3, activation='relu', padding='same', name='conv1')(input_data)
-    model = MaxPooling3D(pool_size=(2, 2, 2), strides=(2, 2, 2), padding='valid', name='pool1')(model)
+    # input_data = Input(shape=(16, 224, 224, 3))
+    model = Conv2D(32, 3, activation='relu', padding='same', name='conv1')(input_data)
+    model = MaxPooling2D(pool_size=(1, 2, 2), strides=(1, 2, 2), padding='valid', name='pool1')(model)
     # 2nd layer group
-    model = Conv3D(16, 3, activation='relu', padding='same', name='conv2')(model)
-    model = MaxPooling3D(pool_size=(4, 4, 4), strides=(2, 2, 2), padding='valid', name='pool2')(model)
-    # 2nd layer group
-    model = Conv3D(1, 3, activation='relu', padding='same', name='conv3')(model)
-    model = MaxPooling3D(pool_size=(3, 27, 27), strides=(2, 2, 2), padding='valid', name='pool3')(model)
-    model = MaxPooling3D(pool_size=(1, 15, 15), strides=(1, 1, 1), padding='valid', name='pool4')(model)
+    model = Conv2D(16, 3, activation='relu', padding='same', name='conv2')(model)
+    model = MaxPooling2D(pool_size=(1, 4, 4), strides=(1, 2, 2), padding='valid', name='pool2')(model)
 
     net_model = Model(input_data, model)
 
