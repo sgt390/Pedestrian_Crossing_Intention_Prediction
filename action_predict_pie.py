@@ -937,6 +937,7 @@ class ActionPredict:
                                   'min_delta': 1, 'patience': 5,
                                   'verbose': 1}
                 default_params.update(learning_scheduler['early_stop'])
+                print(f'using early stopping: {default_params}')
                 callbacks.append(EarlyStopping(**default_params))
 
             if 'plateau' in learning_scheduler:
