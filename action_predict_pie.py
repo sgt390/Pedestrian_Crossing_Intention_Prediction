@@ -1635,7 +1635,7 @@ class MASK_PCPA_4_2D_CNN(ActionPredict):
         x = self._rnn(name='enc0_' + data_types[0], r_sequence=return_sequence)(network_inputs[0])
         encoder_outputs.append(x)
         x = self._3dconv()(network_inputs[1])
-        x = self._rnn(name='enc1_' + data_types[1], r_sequence=return_sequence)(tf.squeeze(x, [1, 2]))
+        x = self._rnn(name='enc1_' + data_types[1], r_sequence=return_sequence)(x)  # (tf.squeeze(x, [1, 2]))
         encoder_outputs.append(x)
         x = self._rnn(name='enc2_' + data_types[2], r_sequence=return_sequence)(network_inputs[2])
         current = [x, network_inputs[3]]
@@ -1914,7 +1914,7 @@ class DataGenerator(Sequence):
                             if self.stack_feats and 'flow' in input_type:
                                 features_batch[i, ..., j * num_ch:j * num_ch + num_ch] = img_features
                             elif 'scene_context' in input_type:
-                                features_batch[i, j,] = tf.reshape(img_features, (224,224,3))
+                                features_batch[i, j,] = tf.reshape(img_features, (224,224,3))  # todo fix this custom size
                             else:
                                 features_batch[i, j,] = img_features
                 else:

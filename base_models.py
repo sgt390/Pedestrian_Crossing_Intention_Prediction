@@ -474,3 +474,29 @@ def I3DNet(freeze_conv_layers=False, weights=None, classes=1,
         net_model.load_weights(weights, by_name=True)
 
     return net_model
+
+
+def SIMPLE_CNN(freeze_conv_layers=False, weights=None,
+           dense_activation='softmax', dropout=0.5, include_top=False,input_data = Input(shape=(16, 112, 112, 3))):
+    """
+    Simple 2d cnn
+    Args:
+        freeze_conv_layers: Whether to freeze convolutional layers at the time of training
+        dense_activation: Activation of the last layer
+        dropout: Dropout of dense layers
+        include_top: Whether to add fc layers
+    Returns:
+        CNN model
+    """
+    # input_data = Input(shape=(16, 112, 112, 3))
+    model = Conv3D(32, 3, activation='relu', padding='same', name='conv1')(input_data)
+    model = MaxPooling3D(pool_size=(1, 2, 2), strides=(1, 2, 2), padding='valid', name='pool1')(model)
+    # 2nd layer group
+    model = Conv3D(16, 3, activation='relu', padding='same', name='conv2')(model)
+    model = MaxPooling3D(pool_size=(2, 2, 2), strides=(2, 2, 2), padding='valid', name='pool2')(model)
+    # flatten
+    x = Flatten(name='flatten')(model)
+
+    net_model = Model(input_data, model)
+
+    return net_model
