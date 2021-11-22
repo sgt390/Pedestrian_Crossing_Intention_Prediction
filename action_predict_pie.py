@@ -292,7 +292,7 @@ class ActionPredict:
         model_inputs = {'input_shape': (224, 224, 3), 'weights': 'imagenet', 'include_top': False}
         vit_model_inputs = {'image_size': 224, 'pretrained': True, 'include_top': False, 'pretrained_top': False}
 
-        base_model = backbone_dict[self._backbone](**model_inputs) or None
+        base_model = backbone_dict[self._backbone](**model_inputs) if self._backbone in backbone_dict else None
         vit_model = vit.vit_b16(**vit_model_inputs)
 
         backbone_model = base_model
