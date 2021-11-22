@@ -315,7 +315,7 @@ class ActionPredict:
 
                 # Modify the path depending on crop mode
                 if crop_type == 'none':
-                    img_save_path = os.path.join(img_save_folder, img_name + '_n.pkl')
+                    img_save_path = os.path.join(img_save_folder, img_name + '_n1.pkl')
                 else:
                     img_save_path = os.path.join(img_save_folder, img_name + '_' + p[0] + '.pkl')
 

@@ -480,7 +480,7 @@ def I3DNet(freeze_conv_layers=False, weights=None, classes=1,
 
 def SIMPLE_CNN(input_data=Input(shape=(16, 224, 224, 3))):
     """
-    Simple 2d cnn
+    Simple 3d cnn (image with channels)
     Args:
         input_data
     Returns:
