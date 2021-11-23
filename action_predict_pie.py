@@ -1825,12 +1825,23 @@ class MASK_PCPA_4_2D_SPLIT(ActionPredict):
 
         att_inputs = []
         # for recurrent branches apply many-to-one attention block
-        for i, enc_in in enumerate(network_inputs[1]):
-            x = attention_3d_block(enc_in, dense_size=attention_size, modality='_' + data_types[1])
-            x = Dropout(0.5)(x)
-            x = Lambda(lambda x: K.expand_dims(x, axis=1))(x)
-            att_inputs.append(x)
-        # aplly many-to-one attention block to the attended modalities
+        x = attention_3d_block(network_inputs[1][0], dense_size=attention_size, modality='_' + data_types[1]) #lel
+        x = Dropout(0.5)(x)
+        x = Lambda(lambda x: K.expand_dims(x, axis=1))(x)
+        att_inputs.append(x)
+        x = attention_3d_block(network_inputs[1][1], dense_size=attention_size, modality='_' + data_types[1])
+        x = Dropout(0.5)(x)
+        x = Lambda(lambda x: K.expand_dims(x, axis=1))(x)
+        att_inputs.append(x)
+        x = attention_3d_block(network_inputs[1][2], dense_size=attention_size, modality='_' + data_types[1])
+        x = Dropout(0.5)(x)
+        x = Lambda(lambda x: K.expand_dims(x, axis=1))(x)
+        att_inputs.append(x)
+        x = attention_3d_block(network_inputs[1][3], dense_size=attention_size, modality='_' + data_types[1])
+        x = Dropout(0.5)(x)
+        x = Lambda(lambda x: K.expand_dims(x, axis=1))(x)
+        att_inputs.append(x)
+
         x = Concatenate(name='concat_modalities', axis=1)(att_inputs)
         x = self._rnn(name='enc1_' + data_types[1], r_sequence=return_sequence)(x)
         encoder_outputs.append(x)
