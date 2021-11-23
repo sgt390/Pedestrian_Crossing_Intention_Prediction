@@ -436,8 +436,7 @@ class ActionPredict:
                             x = np.expand_dims(x, axis=0)
                             x = preprocess_input(x)
                             feat = backbone_model.predict(x)
-                            feat = tf.nn.avg_pool2d(feat, ksize=[7, 7], strides=[1, 1, 1, 1],
-                                                        padding='VALID')
+                            feat = tf.nn.avg_pool2d(feat, ksize=[7, 7], strides=[1, 1, 1, 1], padding='VALID')
                             feat = tf.squeeze(feat)
                             # with tf.compact.v1.Session():
                             feat = feat.numpy()
@@ -1821,8 +1820,6 @@ class MASK_PCPA_4_2D_SPLIT(ActionPredict):
         print(data_sizes[1])
         for i in range(0, core_size):
             if i == 1:
-                network_inputs.append(Input(shape=data_sizes[i][0], name='input_' + data_types[i]))
-            else:
                 network_inputs.append(Input(shape=data_sizes[i], name='input_' + data_types[i]))
 
         x = self._rnn(name='enc0_' + data_types[0], r_sequence=return_sequence)(network_inputs[0])
