@@ -409,7 +409,7 @@ class ActionPredict:
                         if flip_image:
                             img_features = cv2.flip(img_features, 1)
 
-                    elif crop_type == 'scene_split':
+                    elif crop_type == 'context_split':
                         img_data = cv2.imread(imp)
                         ori_dim = img_data.shape
                         b = list(map(int, b[0:4]))
