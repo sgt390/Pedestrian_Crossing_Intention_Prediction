@@ -1819,7 +1819,7 @@ class MASK_PCPA_4_2D_SPLIT(ActionPredict):
         attention_size = self._num_hidden_units
         for i in range(0, core_size):
             if i == 1:
-                network_inputs.append(Input(shape=data_sizes[i, 0], name='input_' + data_types[i]))
+                network_inputs.append(Input(shape=data_sizes[i][0], name='input_' + data_types[i]))
             else:
                 network_inputs.append(Input(shape=data_sizes[i], name='input_' + data_types[i]))
 
