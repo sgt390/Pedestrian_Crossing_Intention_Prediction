@@ -1219,6 +1219,7 @@ def attention_3d_block(hidden_states, dense_size=128, modality=''):
     @return: 2D tensor with shape (batch_size, 128)
     @author: felixhao28.
     """
+    print(f'hidden_states:{hidden_states.shape}')
     hidden_size = int(hidden_states.shape[2])
     # Inside dense layer
     #              hidden_states            dot               W            =>           score_first_part
@@ -1817,6 +1818,7 @@ class MASK_PCPA_4_2D_SPLIT(ActionPredict):
         # network_inputs.append(conv3d_model.input)
         #
         attention_size = self._num_hidden_units
+        print(data_sizes[1])
         for i in range(0, core_size):
             if i == 1:
                 network_inputs.append(Input(shape=data_sizes[i][0], name='input_' + data_types[i]))
@@ -1827,7 +1829,6 @@ class MASK_PCPA_4_2D_SPLIT(ActionPredict):
         encoder_outputs.append(x)
 
         att_inputs = []
-        print(data_types[1])
         # for recurrent branches apply many-to-one attention block
         x = attention_3d_block(network_inputs[1][0], dense_size=attention_size, modality='_' + data_types[1]) #lel
         x = Dropout(0.5)(x)
