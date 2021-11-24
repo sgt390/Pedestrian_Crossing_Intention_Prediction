@@ -792,6 +792,8 @@ class ActionPredict:
             data_gen_params['crop_mode'] = 'pad_resize'
         elif 'mask_cnn' in feature_type:
             data_gen_params['crop_type'] = 'mask_cnn'
+        elif 'context_split' in feature_type:
+            data_gen_params['crop_type'] = 'context_split'
         elif 'mask_vit' in feature_type:
             data_gen_params['crop_type'] = 'mask_vit'
         elif 'mask' in feature_type:
