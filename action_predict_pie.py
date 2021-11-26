@@ -443,7 +443,7 @@ class ActionPredict:
                             if flip_image:
                                 feat = cv2.flip(feat, 1)
                             img_features.append(feat)
-                        img_features = np.concatenate(img_features, axis=0)
+                        img_features = np.array(img_features)
                         #img_features = np.array(img_features)
 
                     else:
@@ -1709,6 +1709,8 @@ class MASK_PCPA_4_2D_CNN(ActionPredict):
                           outputs=model_output)
         net_model.summary()
         plot_model(net_model, to_file='MASK_PCPA_4_2D_CNN.png')
+        net_model.save('full')
+        self._3dconv().save('cnnmodel')
         return net_model
 
 
@@ -1808,32 +1810,6 @@ class MASK_PCPA_4_2D_SPLIT(ActionPredict):
                 'data_params': {'data_types': data_types, 'data_sizes': data_sizes},
                 'count': {'neg_count': neg_count, 'pos_count': pos_count}}
 
-    def attention_4d_block(self, hidden_states, dense_size=128, modality=''):
-        """
-        Many-to-one attention mechanism for Keras.
-        @param hidden_states: 3D tensor with shape (batch_size, time_steps, input_dim).
-        @return: 2D tensor with shape (batch_size, 128)
-        @author: felixhao28.
-        """
-        # print(f'hidden_states:{hidden_states.shape}')
-        hidden_size = int(hidden_states.shape[3])
-        # Inside dense layer
-        #              hidden_states            dot               W            =>           score_first_part
-        # (batch_size, time_steps, hidden_size) dot (hidden_size, hidden_size) => (batch_size, time_steps, hidden_size)
-        # W is the trainable weight matrix of attention Luong's multiplicative style score
-        score_first_part = Dense(hidden_size, use_bias=False, name='attention_score_vec' + modality)(hidden_states)
-        #            score_first_part           dot        last_hidden_state     => attention_weights
-        # (batch_size, time_steps, hidden_size) dot   (batch_size, hidden_size)  => (batch_size, time_steps)
-        h_t = Lambda(lambda x: x[:, :, -1, :], output_shape=(hidden_size,), name='last_hidden_state' + modality)(
-            hidden_states)
-        score = dot([score_first_part, h_t], [3, 2], name='attention_score' + modality)
-        attention_weights = Activation('softmax', name='attention_weight' + modality)(score)
-        # (batch_size, time_steps, hidden_size) dot (batch_size, time_steps) => (batch_size, hidden_size)
-        context_vector = dot([hidden_states, attention_weights], [1, 1], name='context_vector' + modality)
-        pre_activation = concatenate([context_vector, h_t], name='attention_output' + modality)
-        attention_vector = Dense(dense_size, use_bias=False, activation='tanh', name='attention_vector' + modality)(
-            pre_activation)
-        return attention_vector
 
     def get_model(self, data_params):
         return_sequence = True
@@ -1858,7 +1834,6 @@ class MASK_PCPA_4_2D_SPLIT(ActionPredict):
         x = attention_3d_block(network_inputs[1], dense_size=attention_size, modality='_input_' + data_types[1])
         x = Dropout(0.5)(x)
         x = Lambda(lambda x: K.expand_dims(x, axis=1))(x)
-
         x = self._rnn(name='enc1_' + data_types[1], r_sequence=return_sequence)(x)
         encoder_outputs.append(x)
 

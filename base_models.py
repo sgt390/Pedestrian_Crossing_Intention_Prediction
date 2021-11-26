@@ -487,10 +487,10 @@ def SIMPLE_CNN(input_data=Input(shape=(16, 224, 224, 3))):
         CNN model
     """
     # input_data = Input(shape=(16, 224, 224, 3))
-    model = Conv3D(4, 3, activation='relu', padding='same', name='conv1')(input_data)
+    model = Conv2D(4, 3, activation='relu', padding='same', name='conv1')(input_data)
     model = MaxPooling3D(pool_size=(1, 2, 2), strides=(1, 2, 2), padding='valid', name='pool1')(model)
     # 2nd layer group
-    model = Conv3D(4, 3, activation='relu', padding='same', name='conv2')(model)
+    model = Conv2D(4, 3, activation='relu', padding='same', name='conv2')(model)
     model = MaxPooling3D(pool_size=(1, 4, 4), strides=(1, 2, 2), padding='valid', name='pool2')(model)
 
     h = int(model.shape[2])
