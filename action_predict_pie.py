@@ -409,7 +409,7 @@ class ActionPredict:
                         if flip_image:
                             img_features = cv2.flip(img_features, 1)
 
-                    elif crop_type == 'context_split':
+                    elif crop_type == 'context_split_old':
                         img_data = cv2.imread(imp)
                         ori_dim = img_data.shape
                         b = list(map(int, b[0:4]))
@@ -445,6 +445,28 @@ class ActionPredict:
                             img_features.append(feat)
                         img_features = np.array(img_features)
                         #img_features = np.array(img_features)
+
+                    elif crop_type == 'context_split':
+                        img_data = cv2.imread(imp)
+                        ori_dim = img_data.shape
+                        b = list(map(int, b[0:4]))
+                        ## img_data --- > mask_img_data (deeplabV3)
+                        original_im = Image.fromarray(cv2.cvtColor(img_data, cv2.COLOR_BGR2RGB))
+                        resized_im, seg_map = segmodel.run(original_im)
+                        resized_im = np.array(resized_im)
+                        seg_image = label_to_color_image(seg_map).astype(np.uint8)
+                        seg_image = cv2.cvtColor(seg_image, cv2.COLOR_BGR2RGB)
+                        seg_image = cv2.addWeighted(resized_im, 0.5, seg_image, 0.5, 0)
+                        img_data = cv2.resize(seg_image, (ori_dim[1], ori_dim[0]))
+                        ## mask_img_data + pd highlight ---> final_mask_img_data
+                        ped_mask = init_canvas(b[2] - b[0], b[3] - b[1], color=(255, 255, 255))
+                        img_data[b[1]:b[3], b[0]:b[2]] = ped_mask
+                        img_features = cv2.resize(img_data, (target_dim[0]//2, target_dim[1]//2))  # resized context: /2
+                        img = Image.fromarray(cv2.cvtColor(img_features, cv2.COLOR_BGR2RGB))
+                        img = image.img_to_array(img)
+                        img_features = np.array(img)
+                        #img_features = np.array(img_features)
+
 
                     else:
                         img_data = cv2.imread(imp)
@@ -964,8 +986,9 @@ class ActionPredict:
         Returns:
             A list of call backs or None if learning_scheduler is false
         """
-        wandb_callback = WandbCallback(log_evaluation=True)
-        callbacks = [wandb_callback]
+        # wandb_callback = WandbCallback(log_evaluation=True)
+        # callbacks = [wandb_callback]  # todo uncomment
+        callbacks = []
 
         # Set up learning schedulers
         if learning_scheduler:
@@ -1240,6 +1263,22 @@ def attention_3d_block(hidden_states, dense_size=128, modality=''):
         pre_activation)
     return attention_vector
 
+
+def split_cnn_block(in_image, patch_size=16, hidden_size=16, name=''): # todo more filters?
+    image_size = in_image.shape[1], in_image.shape[2]
+    assert (image_size[0] % patch_size == 0) and (
+        image_size[1] % patch_size == 0
+    ), "image_size must be a multiple of patch_size"
+    #x = tf.keras.layers.Input(shape=(image_size[0], image_size[1], 3))
+    y = tf.keras.layers.Conv2D(
+        filters=hidden_size,
+        kernel_size=patch_size,
+        strides=patch_size,
+        padding="valid",
+        name="embedding" + name,
+    )(in_image)
+    y = tf.keras.layers.Reshape((y.shape[1] * y.shape[2], hidden_size))(y)
+    return y
 
 class MASK_PCPA_4_2D(ActionPredict):
     """
@@ -1716,7 +1755,7 @@ class MASK_PCPA_4_2D_CNN(ActionPredict):
 
 class MASK_PCPA_4_2D_SPLIT(ActionPredict):
     """
-    hierfusion MASK_PCPA_SPLIT
+    MASK_PCPA_SPLIT
     Class init function
 
     Args:
@@ -1823,7 +1862,6 @@ class MASK_PCPA_4_2D_SPLIT(ActionPredict):
         # network_inputs.append(conv3d_model.input)
         #
         attention_size = self._num_hidden_units
-        print(data_sizes[1])
         for i in range(0, core_size):
             network_inputs.append(Input(shape=data_sizes[i], name='input_' + data_types[i]))
 
@@ -1831,9 +1869,14 @@ class MASK_PCPA_4_2D_SPLIT(ActionPredict):
         encoder_outputs.append(x)
 
         # for recurrent branches apply many-to-one attention block
-        x = attention_3d_block(network_inputs[1], dense_size=attention_size, modality='_input_' + data_types[1])
-        x = Dropout(0.5)(x)
-        x = Lambda(lambda x: K.expand_dims(x, axis=1))(x)
+        att_global = []
+        for i in range(network_inputs[1].shape[1]):
+            x = split_cnn_block(network_inputs[1][:, i], hidden_size = attention_size, name='_'+str(i))
+            x = attention_3d_block(x, dense_size=attention_size, modality='_input_' + data_types[1] + '_' + str(i))
+            x = Dropout(0.5)(x)
+            x = Lambda(lambda y: K.expand_dims(y, axis=1))(x)
+            att_global.append(x)  # deal with order of the tensor (-1, 16, h_dim) concatenate?
+        x = tf.concat(att_global, 1)
         x = self._rnn(name='enc1_' + data_types[1], r_sequence=return_sequence)(x)
         encoder_outputs.append(x)
 
@@ -1882,7 +1925,7 @@ def action_prediction(model_name):
 
 class MASK_PCPA_4_2D_ViT(ActionPredict):
     """
-    HYBRID MASK_PCPA_ViT
+    MASK_PCPA_ViT
 
     Args:
         num_hidden_units: Number of recurrent hidden layers
@@ -2113,7 +2156,9 @@ class DataGenerator(Sequence):
                             if self.stack_feats and 'flow' in input_type:
                                 features_batch[i, ..., j * num_ch:j * num_ch + num_ch] = img_features
                             elif 'scene_context' in input_type:
-                                features_batch[i, j,] = tf.reshape(img_features, (224,224,3))  # todo fix this custom size
+                                features_batch[i, j,] = tf.reshape(img_features, self.data_sizes[input_type_idx][1:])  # todo fix this custom size
+                            elif 'context_split' in input_type:
+                                features_batch[i, j, ] = tf.reshape(img_features, self.data_sizes[input_type_idx][1:])
                             else:
                                 features_batch[i, j,] = img_features
                 else:
