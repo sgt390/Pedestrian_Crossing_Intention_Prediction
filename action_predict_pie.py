@@ -467,7 +467,6 @@ class ActionPredict:
                         img_features = np.array(img)
                         #img_features = np.array(img_features)
 
-
                     else:
                         img_data = cv2.imread(imp)
                         if flip_image:
@@ -986,8 +985,9 @@ class ActionPredict:
         Returns:
             A list of call backs or None if learning_scheduler is false
         """
-        wandb_callback = WandbCallback(log_evaluation=True)
-        callbacks = [wandb_callback]  # todo uncomment
+        #wandb_callback = WandbCallback(log_evaluation=True)
+        #callbacks = [wandb_callback]  # todo uncomment
+        callbacks = []
 
         # Set up learning schedulers
         if learning_scheduler:
@@ -1848,6 +1848,33 @@ class MASK_PCPA_4_2D_SPLIT(ActionPredict):
                 'data_params': {'data_types': data_types, 'data_sizes': data_sizes},
                 'count': {'neg_count': neg_count, 'pos_count': pos_count}}
 
+    def attention_3d_block_no_ht(self, hidden_states, dense_size=128, modality=''):
+        """
+        Many-to-one attention mechanism for Keras. This version removes the concatenation with the last layer
+        to threat every image patch the same.
+        @param hidden_states: 3D tensor with shape (batch_size, time_steps, input_dim).
+        @return: 2D tensor with shape (batch_size, 128)
+        @author: felixhao28.
+        """
+        # print(f'hidden_states:{hidden_states.shape}')
+        hidden_size = int(hidden_states.shape[2])
+        # Inside dense layer
+        #              hidden_states            dot               W            =>           score_first_part
+        # (batch_size, time_steps, hidden_size) dot (hidden_size, hidden_size) => (batch_size, time_steps, hidden_size)
+        # W is the trainable weight matrix of attention Luong's multiplicative style score
+        score_first_part = Dense(hidden_size, use_bias=False, name='attention_score_vec' + modality)(hidden_states)
+        #            score_first_part           dot        last_hidden_state     => attention_weights
+        # (batch_size, time_steps, hidden_size) dot   (batch_size, hidden_size)  => (batch_size, time_steps)
+        h_t = Lambda(lambda x: x[:, -1, :], output_shape=(hidden_size,), name='last_hidden_state' + modality)(
+            hidden_states)
+        score = dot([score_first_part, h_t], [2, 1], name='attention_score' + modality)
+        attention_weights = Activation('softmax', name='attention_weight' + modality)(score_first_part)
+        # (batch_size, time_steps, hidden_size) dot (batch_size, time_steps) => (batch_size, hidden_size)
+        context_vector = dot([hidden_states, attention_weights], [1, 1], name='context_vector' + modality)
+        #pre_activation = concatenate([context_vector, h_t], name='attention_output' + modality)
+        attention_vector = Dense(dense_size, use_bias=False, activation='tanh', name='attention_vector' + modality)(
+            context_vector)
+        return attention_vector
 
     def get_model(self, data_params):
         return_sequence = True
@@ -1871,7 +1898,7 @@ class MASK_PCPA_4_2D_SPLIT(ActionPredict):
         att_global = []
         for i in range(network_inputs[1].shape[1]):
             x = split_cnn_block(network_inputs[1][:, i], hidden_size = attention_size, name='_'+str(i))
-            x = attention_3d_block(x, dense_size=attention_size, modality='_input_' + data_types[1] + '_' + str(i))
+            x = self.attention_3d_block_no_ht(x, dense_size=attention_size, modality='_input_' + data_types[1] + '_' + str(i))
             x = Dropout(0.5)(x)
             x = Lambda(lambda y: K.expand_dims(y, axis=1))(x)
             att_global.append(x)  # deal with order of the tensor (-1, 16, h_dim) concatenate?
@@ -1912,6 +1939,199 @@ class MASK_PCPA_4_2D_SPLIT(ActionPredict):
                           outputs=model_output)
         net_model.summary()
         plot_model(net_model, to_file='MASK_PCPA_4_2D_SPLIT.png')
+        return net_model
+
+
+class MASK_PCPA_4_2D_SPLIT_PED(ActionPredict):
+    """
+    MASK_PCPA_SPLIT_PED
+    Class init function
+
+    Args:
+        num_hidden_units: Number of recurrent hidden layers
+        cell_type: Type of RNN cell
+        **kwargs: Description
+    """
+
+    def __init__(self,
+                 num_hidden_units=256,
+                 cell_type='gru',
+                 **kwargs):
+        """
+        Class init function
+
+        Args:
+            num_hidden_units: Number of recurrent hidden layers
+            cell_type: Type of RNN cell
+            **kwargs: Description
+        """
+        super().__init__(**kwargs)
+        # Network parameters
+        self._num_hidden_units = num_hidden_units
+        self._rnn = self._gru if cell_type == 'gru' else self._lstm
+        self._rnn_cell = GRUCell if cell_type == 'gru' else LSTMCell
+        self._3dconv = C3DNet if self._backbone == 'c3d' else I3DNet
+
+    def get_data(self, data_type, data_raw, model_opts):
+        assert model_opts['obs_length'] == 16
+        model_opts['normalize_boxes'] = False
+        self._generator = model_opts.get('generator', False)
+        data_type_sizes_dict = {}
+        process = model_opts.get('process', True)
+        dataset = model_opts['dataset']
+        data, neg_count, pos_count = self.get_data_sequence(data_type, data_raw, model_opts)
+
+        data_type_sizes_dict['box'] = data['box'].shape[1:]
+        if 'speed' in data.keys():
+            data_type_sizes_dict['speed'] = data['speed'].shape[1:]
+        # if 'context_cnn' in data.keys():
+        #     data_type_sizes_dict['context_cnn'] = data['context_cnn'].shape[1:]
+
+        # Store the type and size of each image
+        _data = []
+        data_sizes = []
+        data_types = []
+
+        model_opts_3d = model_opts.copy()
+
+        for d_type in model_opts['obs_input_type']:
+            if 'local' in d_type or 'context' in d_type or 'mask' in d_type:
+                if self._backbone == 'c3d':
+                    model_opts_3d['target_dim'] = (112, 112)
+                model_opts_3d['process'] = False
+                features, feat_shape = self.get_context_data(model_opts_3d, data, data_type, d_type)
+            elif 'pose' in d_type:
+                path_to_pose, _ = get_path(save_folder='poses',
+                                           dataset=dataset,
+                                           save_root_folder='data/features')
+                features = get_pose(data['image'],
+                                    data['ped_id'],
+                                    data_type=data_type,
+                                    file_path=path_to_pose,
+                                    dataset=model_opts['dataset'])
+                feat_shape = features.shape[1:]
+            else:
+                features = data[d_type]
+                feat_shape = features.shape[1:]
+            _data.append(features)
+            data_sizes.append(feat_shape)
+            data_types.append(d_type)
+        # create the final data file to be returned
+        if self._generator:
+            _data = (DataGenerator(data=_data,
+                                   labels=data['crossing'],
+                                   data_sizes=data_sizes,
+                                   process=process,
+                                   global_pooling=None,
+                                   input_type_list=model_opts['obs_input_type'],
+                                   batch_size=model_opts['batch_size'],
+                                   shuffle=data_type != 'test',
+                                   to_fit=data_type != 'test'), data['crossing'])  # set y to None
+        # global_pooling=self._global_pooling,
+        else:
+            _data = (_data, data['crossing'])
+
+        return {'data': _data,
+                'ped_id': data['ped_id'],
+                'tte': data['tte'],
+                'image': data['image'],
+                'data_params': {'data_types': data_types, 'data_sizes': data_sizes},
+                'count': {'neg_count': neg_count, 'pos_count': pos_count}}
+
+    def attention_3d_block_no_ht(self, hidden_states, dense_size=128, modality=''):
+        """
+        Many-to-one attention mechanism for Keras. This version removes the concatenation with the last layer
+        to threat every image patch the same.
+        @param hidden_states: 3D tensor with shape (batch_size, time_steps, input_dim).
+        @return: 2D tensor with shape (batch_size, 128)
+        @author: felixhao28.
+        """
+        # print(f'hidden_states:{hidden_states.shape}')
+        hidden_size = int(hidden_states.shape[2])
+        # Inside dense layer
+        #              hidden_states            dot               W            =>           score_first_part
+        # (batch_size, time_steps, hidden_size) dot (hidden_size, hidden_size) => (batch_size, time_steps, hidden_size)
+        # W is the trainable weight matrix of attention Luong's multiplicative style score
+        score_first_part = Dense(hidden_size, use_bias=False, name='attention_score_vec' + modality)(hidden_states)
+        #            score_first_part           dot        last_hidden_state     => attention_weights
+        # (batch_size, time_steps, hidden_size) dot   (batch_size, hidden_size)  => (batch_size, time_steps)
+        h_t = Lambda(lambda x: x[:, -1, :], output_shape=(hidden_size,), name='last_hidden_state' + modality)(
+            hidden_states)
+        score = dot([score_first_part, h_t], [2, 1], name='attention_score' + modality)
+        attention_weights = Activation('softmax', name='attention_weight' + modality)(score_first_part)
+        # (batch_size, time_steps, hidden_size) dot (batch_size, time_steps) => (batch_size, hidden_size)
+        context_vector = dot([hidden_states, attention_weights], [1, 1], name='context_vector' + modality)
+        #pre_activation = concatenate([context_vector, h_t], name='attention_output' + modality)
+        attention_vector = Dense(dense_size, use_bias=False, activation='tanh', name='attention_vector' + modality)(
+            context_vector)
+        return attention_vector
+
+    def get_model(self, data_params):
+        return_sequence = True
+        data_sizes = data_params['data_sizes']
+        data_types = data_params['data_types']
+        network_inputs = []
+        encoder_outputs = []
+        core_size = len(data_sizes)
+
+        # conv3d_model = self._3dconv()
+        # network_inputs.append(conv3d_model.input)
+        #
+        attention_size = self._num_hidden_units
+        for i in range(0, core_size):
+            network_inputs.append(Input(shape=data_sizes[i], name='input_' + data_types[i]))
+
+        x = self._rnn(name='enc0_' + data_types[0], r_sequence=return_sequence)(network_inputs[0])
+        encoder_outputs.append(x)
+
+        # for recurrent branches apply many-to-one attention block
+        att_global = []
+        for i in range(network_inputs[1].shape[1]):
+            x = split_cnn_block(network_inputs[1][:, i], hidden_size = attention_size, name='_'+str(i))
+            px = Dense(x.shape[-1], name='reduce_ped_'+str(i))(network_inputs[0][:, i])
+            px = Lambda(lambda x: K.expand_dims(x, axis=1))(px)
+            x = tf.concat([x, px], axis=1)
+            x = attention_3d_block(x, dense_size=attention_size, modality='_input_' + data_types[1] + '_' + str(i))
+            x = Dropout(0.5)(x)
+            x = Lambda(lambda y: K.expand_dims(y, axis=1))(x)
+            att_global.append(x)  # deal with order of the tensor (-1, 16, h_dim) concatenate?
+        x = tf.concat(att_global, 1)
+        x = self._rnn(name='enc1_' + data_types[1], r_sequence=return_sequence)(x)
+        encoder_outputs.append(x)
+
+        x = self._rnn(name='enc2_' + data_types[2], r_sequence=return_sequence)(network_inputs[2])
+        current = [x, network_inputs[3]]
+        x = Concatenate(name='concat_early3', axis=2)(current)
+        x = self._rnn(name='enc3_' + data_types[3], r_sequence=return_sequence)(x)
+        current = [x, network_inputs[4]]
+        x = Concatenate(name='concat_early4', axis=2)(current)
+        x = self._rnn(name='enc4_' + data_types[4], r_sequence=return_sequence)(x)
+        encoder_outputs.append(x)
+
+        if len(encoder_outputs) > 1:
+            att_enc_out = []
+            # for recurrent branches apply many-to-one attention block
+            for i, enc_out in enumerate(encoder_outputs[0:]):
+                x = attention_3d_block(enc_out, dense_size=attention_size, modality='_' + data_types[i])
+                x = Dropout(0.5)(x)
+                x = Lambda(lambda x: K.expand_dims(x, axis=1))(x)
+                att_enc_out.append(x)
+            # aplly many-to-one attention block to the attended modalities
+            x = Concatenate(name='concat_modalities', axis=1)(att_enc_out)
+            encodings = attention_3d_block(x, dense_size=attention_size, modality='_modality')
+
+        else:
+            encodings = encoder_outputs[0]
+            encodings = attention_3d_block(encodings, dense_size=attention_size, modality='_modality')
+
+        model_output = Dense(1, activation='sigmoid',
+                             name='output_dense',
+                             activity_regularizer=regularizers.l2(0.001))(encodings)
+
+        net_model = Model(inputs=network_inputs,
+                          outputs=model_output)
+        net_model.summary()
+        plot_model(net_model, to_file='MASK_PCPA_4_2D_SPLIT_PED.png')
         return net_model
 
 
