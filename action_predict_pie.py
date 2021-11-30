@@ -467,6 +467,35 @@ class ActionPredict:
                         img_features = np.array(img)
                         #img_features = np.array(img_features)
 
+                    elif crop_type == 'context_split_surround':
+                        img_data = cv2.imread(imp)
+                        ori_dim = img_data.shape
+                        b = list(map(int, b[0:4]))
+                        ## img_data --- > mask_img_data (deeplabV3)
+                        original_im = Image.fromarray(cv2.cvtColor(img_data, cv2.COLOR_BGR2RGB))
+                        resized_im, seg_map = segmodel.run(original_im)
+                        resized_im = np.array(resized_im)
+                        seg_image = label_to_color_image(seg_map).astype(np.uint8)
+                        seg_image = cv2.cvtColor(seg_image, cv2.COLOR_BGR2RGB)
+                        seg_image = cv2.addWeighted(resized_im, 0.5, seg_image, 0.5, 0)
+                        img_data = cv2.resize(seg_image, (ori_dim[1], ori_dim[0]))
+                        ## obscure the scene far away from the pedestrian (far = > 16 px from the pedestrian
+                        # image assumed to be 112 x 112
+
+
+                        blackbox = init_canvas(80, 90, color=(255, 255, 255))
+                        xc_ped, yc_ped = (b[3]+b[1])/2, (b[2] + b[0])/2
+                        scene_coords = [(c*90, d*80, c*90+90, d*80+80) for c in range(img_data.shape[0]//90) for d in range(img_data.shape[1]//80)]
+                        far_coords = [bs for bs in scene_coords if abs(bs[2] - 45 - xc_ped) > 560 or abs(bs[3] - 40 - yc_ped) > 560]
+                        for coord in far_coords:
+                            img_data[coord[0]:coord[2], coord[1]:coord[3]] = blackbox
+                        ## mask_img_data + pd highlight ---> final_mask_img_data
+                        ped_mask = init_canvas(b[2] - b[0], b[3] - b[1], color=(255, 255, 255))
+                        img_data[b[1]:b[3], b[0]:b[2]] = ped_mask
+                        img_features = cv2.resize(img_data, (target_dim[0]//2, target_dim[1]//2))  # resized context: /2
+                        img = Image.fromarray(cv2.cvtColor(img_features, cv2.COLOR_BGR2RGB))
+                        img = image.img_to_array(img)
+                        img_features = np.array(img)
                     else:
                         img_data = cv2.imread(imp)
                         if flip_image:
@@ -815,6 +844,8 @@ class ActionPredict:
         elif 'mask_cnn' in feature_type:
             data_gen_params['crop_type'] = 'mask_cnn'
         elif 'context_split' in feature_type:
+            data_gen_params['crop_type'] = 'context_split_surround'
+        elif 'context_split' in feature_type:
             data_gen_params['crop_type'] = 'context_split'
         elif 'mask_vit' in feature_type:
             data_gen_params['crop_type'] = 'mask_vit'
@@ -986,7 +1017,7 @@ class ActionPredict:
             A list of call backs or None if learning_scheduler is false
         """
         wandb_callback = WandbCallback(log_evaluation=True)
-        callbacks = [wandb_callback]  # todo uncomment
+        callbacks = [wandb_callback]
         # callbacks = []
 
         # Set up learning schedulers
