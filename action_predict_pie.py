@@ -293,7 +293,8 @@ class ActionPredict:
         vit_model_inputs = {'image_size': 224, 'pretrained': True, 'include_top': False, 'pretrained_top': False}
 
         base_model = backbone_dict[self._backbone](**model_inputs)
-        vit_model = vit.vit_b16(**vit_model_inputs)
+        vit16_model = vit.vit_b16(**vit_model_inputs)
+        vit32_model = vit.vit_b32(**vit_model_inputs)
 
         backbone_model = base_model
         # backbone_model = Model(inputs=base_model.input, outputs=base_model.get_layer('block4_pool').output)
@@ -403,7 +404,7 @@ class ActionPredict:
                         x = image.img_to_array(img)
                         x = np.expand_dims(x, axis=0)
                         x = vit.preprocess_inputs(x) # ! global uses vit / local still uses default cnn
-                        img_features = vit_model.predict(x) # ! generalize somehow? line above as well TODO fix inputs of next layer (768 out)
+                        img_features = vit32_model.predict(x) # ! generalize somehow? line above as well TODO fix inputs of next layer (768 out)
                         img_features = tf.squeeze(img_features)
                         img_features = img_features.numpy()
                         if flip_image:
