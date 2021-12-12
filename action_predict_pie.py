@@ -1369,7 +1369,7 @@ def split_cnn_block(in_image, patch_size=16, hidden_size=16, name=''):
     return y
 
 
-def split_cnn_block(in_image, patch_size=16, hidden_size=16, name=''):
+def split_cnn_block_multi(in_image, patch_size=16, hidden_size=16, name=''):
     image_size = in_image.shape[1], in_image.shape[2]
     assert (image_size[0] % patch_size == 0) and (
         image_size[1] % patch_size == 0
@@ -2011,7 +2011,7 @@ class MASK_PCPA_4_2D_SPLIT(ActionPredict):
         att_global = []
         for i in range(network_inputs[1].shape[1]):
             x = split_cnn_block(network_inputs[1][:, i], hidden_size = attention_size, name='_'+str(i))
-            x = self.attention_3d_block_no_ht(x, dense_size=attention_size, modality='_input_' + data_types[1] + '_' + str(i))
+            x = attention_3d_block(x, dense_size=attention_size, modality='_input_' + data_types[1] + '_' + str(i))
             x = Dropout(0.5)(x)
             x = Lambda(lambda y: K.expand_dims(y, axis=1))(x)
             att_global.append(x)  # deal with order of the tensor (-1, 16, h_dim) concatenate?
@@ -2171,7 +2171,7 @@ class MASK_PCPA_4_2D_SPLIT_MULTI(ActionPredict):
         # for recurrent branches apply many-to-one attention block
         att_global = []
         for i in range(network_inputs[1].shape[1]):
-            x = split_cnn_block(network_inputs[1][:, i], hidden_size = attention_size, name='_'+str(i))
+            x = split_cnn_block_multi(network_inputs[1][:, i], hidden_size = attention_size, name='_'+str(i))
             x = attention_3d_block(x, dense_size=attention_size, modality='_input_' + data_types[1] + '_' + str(i))
             x = Dropout(0.5)(x)
             x = Lambda(lambda y: K.expand_dims(y, axis=1))(x)
