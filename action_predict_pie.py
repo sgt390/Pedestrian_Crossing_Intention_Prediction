@@ -381,6 +381,35 @@ class ActionPredict:
                         if flip_image:
                             img_features = cv2.flip(img_features, 1)
 
+                    elif crop_type == 'scene_context':
+                        img_data = cv2.imread(imp)
+                        ori_dim = img_data.shape
+                        # bbox = jitter_bbox(imp, [b], 'enlarge', crop_resize_ratio)[0]
+                        # bbox = squarify(bbox, 1, img_data.shape[1])
+                        # bbox = list(map(int, bbox[0:4]))
+                        b = list(map(int, b[0:4]))
+                        ## img_data --- > mask_img_data (deeplabV3)
+                        original_im = Image.fromarray(cv2.cvtColor(img_data, cv2.COLOR_BGR2RGB))
+                        resized_im = np.array(original_im)
+                        resized_im = cv2.addWeighted(resized_im, 0.5, resized_im, 0.5, 0)
+                        img_data = cv2.resize(resized_im, (ori_dim[1], ori_dim[0]))
+                        ## mask_img_data + pd highlight ---> final_mask_img_data
+                        ped_mask = init_canvas(b[2] - b[0], b[3] - b[1], color=(255, 255, 255))
+                        img_data[b[1]:b[3], b[0]:b[2]] = ped_mask
+                        img_features = cv2.resize(img_data, target_dim)
+                        img = Image.fromarray(cv2.cvtColor(img_features, cv2.COLOR_BGR2RGB))
+                        x = image.img_to_array(img)
+                        x = np.expand_dims(x, axis=0)
+                        x = preprocess_input(x)
+                        img_features = backbone_model.predict(x)
+                        img_features = tf.nn.avg_pool2d(img_features, ksize=[7, 7], strides=[1, 1, 1, 1], #todo adapt for 14,14? ksize=[14, 14]
+                                                        padding='VALID')
+                        img_features = tf.squeeze(img_features)
+                        # with tf.compact.v1.Session():
+                        img_features = img_features.numpy()
+                        if flip_image:
+                            img_features = cv2.flip(img_features, 1)
+
                     elif crop_type == 'mask_vit':
                         img_data = cv2.imread(imp)
                         ori_dim = img_data.shape
@@ -889,7 +918,7 @@ class ActionPredict:
             data_gen_params['crop_type'] = 'surround'
             data_gen_params['crop_resize_ratio'] = eratio
         elif 'scene_context' in feature_type:
-            data_gen_params['crop_type'] = 'none'
+            data_gen_params['crop_type'] = 'scene_context'
         save_folder_name = feature_type
         if 'flow' not in feature_type:
             save_folder_name = '_'.join([feature_type, aux_name])
