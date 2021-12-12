@@ -419,7 +419,8 @@ class ActionPredict:
                         b = list(map(int, b[0:4]))
                         ## img_data --- > mask_img_data (deeplabV3)
                         original_im = Image.fromarray(cv2.cvtColor(img_data, cv2.COLOR_BGR2RGB))
-                        img_data = cv2.resize(original_im, (ori_dim[1], ori_dim[0]))
+                        resized_im = np.array(original_im)
+                        img_data = cv2.resize(resized_im, (ori_dim[1], ori_dim[0]))
                         ## mask_img_data + pd highlight ---> final_mask_img_data
                         ped_mask = init_canvas(b[2] - b[0], b[3] - b[1], color=(255, 255, 255))
                         img_data[b[1]:b[3], b[0]:b[2]] = ped_mask
