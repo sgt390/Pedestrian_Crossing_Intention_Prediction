@@ -1352,6 +1352,22 @@ def attention_3d_block(hidden_states, dense_size=128, modality=''):
         pre_activation)
     return attention_vector
 
+def split_cnn_block(in_image, patch_size=16, hidden_size=16, name=''):
+    image_size = in_image.shape[1], in_image.shape[2]
+    assert (image_size[0] % patch_size == 0) and (
+        image_size[1] % patch_size == 0
+    ), "image_size must be a multiple of patch_size"
+    #x = tf.keras.layers.Input(shape=(image_size[0], image_size[1], 3))
+    y = tf.keras.layers.Conv2D(
+        filters=hidden_size,
+        kernel_size=patch_size,
+        strides=patch_size,
+        padding="valid",
+        name="embedding" + name,
+    )(in_image)
+    y = tf.keras.layers.Reshape((y.shape[1] * y.shape[2], hidden_size))(y)
+    return y
+
 
 def split_cnn_block(in_image, patch_size=16, hidden_size=16, name=''):
     image_size = in_image.shape[1], in_image.shape[2]
@@ -1364,14 +1380,14 @@ def split_cnn_block(in_image, patch_size=16, hidden_size=16, name=''):
         kernel_size=4,
         strides=patch_size,
         padding="valid",
-        name="embedding" + name,
+        name="embedding_cnn0" + name,
     )(in_image)
     y = tf.keras.layers.Conv2D(
         filters=hidden_size,
         kernel_size=4,
         strides=patch_size,
         padding="valid",
-        name="embedding" + name,
+        name="embedding_cnn1" + name,
     )(y)
     y = tf.keras.layers.Reshape((y.shape[1] * y.shape[2], hidden_size))(y)
     return y
