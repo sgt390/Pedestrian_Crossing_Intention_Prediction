@@ -410,6 +410,30 @@ class ActionPredict:
                         if flip_image:
                             img_features = cv2.flip(img_features, 1)
 
+                    elif crop_type == 'vit32':
+                        img_data = cv2.imread(imp)
+                        ori_dim = img_data.shape
+                        # bbox = jitter_bbox(imp, [b], 'enlarge', crop_resize_ratio)[0]
+                        # bbox = squarify(bbox, 1, img_data.shape[1])
+                        # bbox = list(map(int, bbox[0:4]))
+                        b = list(map(int, b[0:4]))
+                        ## img_data --- > mask_img_data (deeplabV3)
+                        original_im = Image.fromarray(cv2.cvtColor(img_data, cv2.COLOR_BGR2RGB))
+                        img_data = cv2.resize(original_im, (ori_dim[1], ori_dim[0]))
+                        ## mask_img_data + pd highlight ---> final_mask_img_data
+                        ped_mask = init_canvas(b[2] - b[0], b[3] - b[1], color=(255, 255, 255))
+                        img_data[b[1]:b[3], b[0]:b[2]] = ped_mask
+                        img_features = cv2.resize(img_data, target_dim)
+                        img = Image.fromarray(cv2.cvtColor(img_features, cv2.COLOR_BGR2RGB))
+                        x = image.img_to_array(img)
+                        x = np.expand_dims(x, axis=0)
+                        x = vit.preprocess_inputs(x) # ! global uses vit / local still uses default cnn
+                        img_features = vit32_model.predict(x) # ! generalize somehow? line above as well TODO fix inputs of next layer (768 out)
+                        img_features = tf.squeeze(img_features)
+                        img_features = img_features.numpy()
+                        if flip_image:
+                            img_features = cv2.flip(img_features, 1)
+
                     elif crop_type == 'context_split_old':
                         img_data = cv2.imread(imp)
                         ori_dim = img_data.shape
@@ -850,6 +874,8 @@ class ActionPredict:
             data_gen_params['crop_type'] = 'context_split'
         elif 'mask_vit' in feature_type:
             data_gen_params['crop_type'] = 'mask_vit'
+        elif 'vit32' in feature_type:
+            data_gen_params['crop_type'] = 'vit32'
         elif 'mask' in feature_type:
             data_gen_params['crop_type'] = 'mask'
             # data_gen_params['crop_mode'] = 'pad_resize'
