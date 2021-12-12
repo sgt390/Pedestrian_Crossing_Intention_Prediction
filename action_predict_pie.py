@@ -1073,9 +1073,10 @@ class ActionPredict:
         Returns:
             A list of call backs or None if learning_scheduler is false
         """
-        wandb_callback = WandbCallback(log_evaluation=True)
-        callbacks = [wandb_callback]
-        # callbacks = []
+        # wandb_callback = WandbCallback(log_evaluation=True)
+        # callbacks = [wandb_callback]
+        callbacks = []
+
 
 
         # Set up learning schedulers
@@ -1360,14 +1361,14 @@ def split_cnn_block(in_image, patch_size=16, hidden_size=16, name=''):
     #x = tf.keras.layers.Input(shape=(image_size[0], image_size[1], 3))
     y = tf.keras.layers.Conv2D(
         filters=hidden_size//2,
-        kernel_size=patch_size,
+        kernel_size=4,
         strides=patch_size,
         padding="valid",
         name="embedding" + name,
     )(in_image)
     y = tf.keras.layers.Conv2D(
         filters=hidden_size,
-        kernel_size=patch_size,
+        kernel_size=4,
         strides=patch_size,
         padding="valid",
         name="embedding" + name,
