@@ -410,7 +410,7 @@ class ActionPredict:
                         if flip_image:
                             img_features = cv2.flip(img_features, 1)
 
-                    elif crop_type == 'vit32':
+                    elif crop_type == 'context_vit32':
                         img_data = cv2.imread(imp)
                         ori_dim = img_data.shape
                         # bbox = jitter_bbox(imp, [b], 'enlarge', crop_resize_ratio)[0]
@@ -874,8 +874,8 @@ class ActionPredict:
             data_gen_params['crop_type'] = 'context_split'
         elif 'mask_vit' in feature_type:
             data_gen_params['crop_type'] = 'mask_vit'
-        elif 'vit32' in feature_type:
-            data_gen_params['crop_type'] = 'vit32'
+        elif 'context_vit32' in feature_type:
+            data_gen_params['crop_type'] = 'context_vit32'
         elif 'mask' in feature_type:
             data_gen_params['crop_type'] = 'mask'
             # data_gen_params['crop_mode'] = 'pad_resize'

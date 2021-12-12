@@ -1,6 +1,6 @@
 model_opts:
   model: MASK_PCPA_4_2D_ViT
-  obs_input_type: [local_context_cnn, vit32, pose, box, speed]
+  obs_input_type: [local_context_cnn, context_vit32, pose, box, speed]
   apply_class_weights: True
   normalize_boxes: True
   generator: True
