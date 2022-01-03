@@ -8,6 +8,7 @@ from tensorflow.keras.layers import Lambda, BatchNormalization
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Concatenate, Dense
 import tensorflow.keras.backend as K
+from tensorflow import keras
 
 
 def AlexNet(include_top=True,
