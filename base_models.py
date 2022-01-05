@@ -9,7 +9,8 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Concatenate, Dense
 import tensorflow.keras.backend as K
 from tensorflow import keras
-
+from tensorflow_addons.layers import MultiHeadAttention
+import tensorflow as tf
 
 def AlexNet(include_top=True,
             weights=None,
@@ -501,3 +502,85 @@ def SIMPLE_CNN(input_data=Input(shape=(16, 224, 224, 3))):
     net_model = Model(input_data, model)
 
     return net_model
+
+
+def AttentionBlock(name='AttentionBlock', num_heads=2, head_size=128,
+                   ff_dim=None, dropout=0, input_data=Input(shape=(16, 1536))):
+    input_shape = input_data.shape
+    if ff_dim is None:
+        ff_dim = head_size
+
+    attention = MultiHeadAttention(num_heads=num_heads, head_size=head_size, dropout=dropout)
+    attention_dropout = keras.layers.Dropout(dropout)
+    attention_norm = keras.layers.LayerNormalization(epsilon=1e-6)
+
+    ff_conv1 = keras.layers.Conv1D(filters=ff_dim, kernel_size=1, activation='relu')
+    # self.ff_conv2 at build()
+    ff_dropout = keras.layers.Dropout(dropout)
+    ff_norm = keras.layers.LayerNormalization(epsilon=1e-6)
+
+    ff_conv2 = keras.layers.Conv1D(filters=input_shape[-1], kernel_size=1)
+
+    x = attention([input_data, input_data])
+    x = attention_dropout(x)
+    x = attention_norm(input_data + x)
+
+    x = ff_conv1(x)
+    x = ff_conv2(x)
+    x = ff_dropout(x)
+
+    x = ff_norm(input_data + x)
+    return Model(input_data, x)
+
+
+class Time2Vec(keras.layers.Layer):
+    # Time2Vec: Learning a Vector Representation of Time - arxiv
+    def __init__(self, kernel_size=1, **kwargs):
+        super(Time2Vec, self).__init__(trainable=True, name='Time2VecLayer')
+        self.k = kernel_size
+
+    def build(self, input_shape):
+        # trend
+        self.wb = self.add_weight(name='wb', shape=(input_shape[1],), initializer='uniform', trainable=True)
+        self.bb = self.add_weight(name='bb', shape=(input_shape[1],), initializer='uniform', trainable=True)
+        # periodic
+        self.wa = self.add_weight(name='wa', shape=(1, input_shape[1], self.k), initializer='uniform', trainable=True)
+        self.ba = self.add_weight(name='ba', shape=(1, input_shape[1], self.k), initializer='uniform', trainable=True)
+        super(Time2Vec, self).build(input_shape)
+
+    def get_config(self):
+        config = super(Time2Vec, self).get_config()
+        config.update({"k": self.k})
+        return config
+
+    def call(self, inputs, **kwargs):
+        bias = self.wb * inputs + self.bb
+        dp = K.dot(inputs, self.wa) + self.ba
+        wgts = K.sin(dp)  # or K.cos(.)
+
+        ret = K.concatenate([K.expand_dims(bias, -1), wgts], -1)
+        ret = K.reshape(ret, (-1, inputs.shape[1] * (self.k + 1)))
+        return ret
+
+    def compute_output_shape(self, input_shape):
+        return input_shape[0], input_shape[1] * (self.k + 1)
+
+
+def ModelTrunk(name='ModelTrunk', time2vec_dim=1, num_heads=2, head_size=128, ff_dim=None, num_layers=1,
+                 dropout=0, representation_size=None, input_data=Input(shape=(16, 512))):
+        time2vec = Time2Vec(kernel_size=time2vec_dim)
+        timedist = keras.layers.TimeDistributed(time2vec)
+        if ff_dim is None:
+            ff_dim = head_size
+        dropout = dropout
+        attention_layers = [AttentionBlock(num_heads=num_heads, head_size=head_size, ff_dim=ff_dim, dropout=dropout) for _ in range(num_layers)]
+        dense = tf.keras.layers.Dense(representation_size, name=name+"pre_logits", activation="tanh")
+
+        time_embedding = timedist(input_data)
+        x = K.concatenate([input_data, time_embedding], -1)
+        for attention_layer in attention_layers:
+            x = attention_layer(x)
+        x = K.reshape(x, (-1, x.shape[1] * x.shape[2]))  # flat vector of features out
+        x = dense(x)
+        x = K.expand_dims(x, 1)
+        return Model(input_data, x)

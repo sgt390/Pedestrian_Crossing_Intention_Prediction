@@ -2,7 +2,7 @@ import time
 import yaml
 import wget
 from utils import *
-from base_models import AlexNet, C3DNet, convert_to_fcn, C3DNet2, SIMPLE_CNN
+from base_models import AlexNet, C3DNet, convert_to_fcn, C3DNet2, SIMPLE_CNN, Time2Vec
 from base_models import I3DNet
 from tensorflow.keras.layers import Input, Concatenate, Dense
 from tensorflow.keras.layers import GRU, LSTM, GRUCell
@@ -38,9 +38,8 @@ from tensorflow.keras.models import Model
 import numpy as np
 
 from wandb.keras import WandbCallback
-from tensorflow_addons.layers import MultiHeadAttention
 from tensorflow import keras
-
+from base_models import ModelTrunk
 ###############################################
 class DeepLabModel(object):
     """Class to load deeplab model and run inference."""
@@ -1055,9 +1054,9 @@ class ActionPredict:
         Returns:
             A list of call backs or None if learning_scheduler is false
         """
-        wandb_callback = WandbCallback(log_evaluation=True)
-        callbacks = [wandb_callback]
-        # callbacks = [] # todo swap
+        # wandb_callback = WandbCallback(log_evaluation=True)
+        # callbacks = [wandb_callback]
+        callbacks = [] # todo swap
 
 
 
@@ -1200,7 +1199,7 @@ class ActionPredict:
             # except:
             #     model_opts = pickle.load(fid, encoding='bytes')
 
-        test_model = load_model(os.path.join(model_path, 'model.h5'))
+        test_model = load_model(os.path.join(model_path, 'model.h5'), custom_objects={'Time2Vec': Time2Vec})
         test_model.summary()
 
         test_data = self.get_data('test', data_test, {**opts['model_opts'], 'batch_size': 1})
@@ -1413,89 +1412,6 @@ class DataGenerator(Sequence):
         return np.array(self.labels[indices])
 
 
-class Time2Vec(keras.layers.Layer):
-    # Time2Vec: Learning a Vector Representation of Time - arxiv
-    def __init__(self, kernel_size=1):
-        super(Time2Vec, self).__init__(trainable=True, name='Time2VecLayer')
-        self.k = kernel_size
-
-    def build(self, input_shape):
-        # trend
-        self.wb = self.add_weight(name='wb', shape=(input_shape[1],), initializer='uniform', trainable=True)
-        self.bb = self.add_weight(name='bb', shape=(input_shape[1],), initializer='uniform', trainable=True)
-        # periodic
-        self.wa = self.add_weight(name='wa', shape=(1, input_shape[1], self.k), initializer='uniform', trainable=True)
-        self.ba = self.add_weight(name='ba', shape=(1, input_shape[1], self.k), initializer='uniform', trainable=True)
-        super(Time2Vec, self).build(input_shape)
-
-    def call(self, inputs, **kwargs):
-        bias = self.wb * inputs + self.bb
-        dp = K.dot(inputs, self.wa) + self.ba
-        wgts = K.sin(dp)  # or K.cos(.)
-
-        ret = K.concatenate([K.expand_dims(bias, -1), wgts], -1)
-        ret = K.reshape(ret, (-1, inputs.shape[1] * (self.k + 1)))
-        return ret
-
-    def compute_output_shape(self, input_shape):
-        return input_shape[0], input_shape[1] * (self.k + 1)
-
-
-class AttentionBlock(keras.Model):
-    def __init__(self, name='AttentionBlock', num_heads=2, head_size=128, ff_dim=None, dropout=0, **kwargs):
-        super().__init__(name=name, **kwargs)
-
-        if ff_dim is None:
-            ff_dim = head_size
-
-        self.attention = MultiHeadAttention(num_heads=num_heads, head_size=head_size, dropout=dropout)
-        self.attention_dropout = keras.layers.Dropout(dropout)
-        self.attention_norm = keras.layers.LayerNormalization(epsilon=1e-6)
-
-        self.ff_conv1 = keras.layers.Conv1D(filters=ff_dim, kernel_size=1, activation='relu')
-        # self.ff_conv2 at build()
-        self.ff_dropout = keras.layers.Dropout(dropout)
-        self.ff_norm = keras.layers.LayerNormalization(epsilon=1e-6)
-
-    def build(self, input_shape):
-        self.ff_conv2 = keras.layers.Conv1D(filters=input_shape[-1], kernel_size=1)
-
-    def call(self, inputs):
-        x = self.attention([inputs, inputs])
-        x = self.attention_dropout(x)
-        x = self.attention_norm(inputs + x)
-
-        x = self.ff_conv1(x)
-        x = self.ff_conv2(x)
-        x = self.ff_dropout(x)
-
-        x = self.ff_norm(inputs + x)
-        return x
-
-
-class ModelTrunk(keras.Model):
-    # Theodoros Ntakouris - from Towards Data Science (with dependant modules)
-    def __init__(self, name='ModelTrunk', time2vec_dim=1, num_heads=2, head_size=128, ff_dim=None, num_layers=1,
-                 dropout=0, representation_size=None, **kwargs):
-        super().__init__(name=name, **kwargs)
-        self.time2vec = Time2Vec(kernel_size=time2vec_dim)
-        if ff_dim is None:
-            ff_dim = head_size
-        self.dropout = dropout
-        self.representation_size=representation_size
-        self.attention_layers = [AttentionBlock(num_heads=num_heads, head_size=head_size, ff_dim=ff_dim, dropout=dropout) for _ in range(num_layers)]
-        if self.representation_size is not None:
-            self.dense = tf.keras.layers.Dense(self.representation_size, name="pre_logits", activation="tanh")
-
-    def call(self, inputs):
-        time_embedding = keras.layers.TimeDistributed(self.time2vec)(inputs)
-        x = K.concatenate([inputs, time_embedding], -1)
-        for attention_layer in self.attention_layers:
-            x = attention_layer(x)
-        x = K.reshape(x, (-1, x.shape[1] * x.shape[2]))  # flat vector of features out
-        x = self.dense(x)
-        return K.expand_dims(x, 1)
-
 class PCPA_MULTI(ActionPredict):
     """
     hierfusion MASK_PCPA
@@ -1618,21 +1534,16 @@ class PCPA_MULTI(ActionPredict):
         x = self._rnn(name='enc4_' + data_types[4], r_sequence=return_sequence)(x)
         encoder_outputs.append(x)
 
-        if len(encoder_outputs) > 1:
-            att_enc_out = encoder_outputs[:2]
-            # for recurrent branches apply many-to-one attention block
-            for i, enc_out in enumerate(encoder_outputs[2:]):
-                x = attention_3d_block(enc_out, dense_size=attention_size, modality='_' + data_types[i])
-                x = Dropout(0.5)(x)
-                x = Lambda(lambda x: K.expand_dims(x, axis=1))(x)
-                att_enc_out.append(x)
-            # aplly many-to-one attention block to the attended modalities
-            x = Concatenate(name='concat_modalities', axis=1)(encoder_outputs[:2] + att_enc_out)
-            encodings = attention_3d_block(x, dense_size=attention_size, modality='_modality')
-
-        else:
-            encodings = encoder_outputs[0]
-            encodings = attention_3d_block(encodings, dense_size=attention_size, modality='_modality')
+        # if len(encoder_outputs) > 1:
+        #     # for recurrent branches apply many-to-one attention block
+        #     for i, enc_out in enumerate(encoder_outputs[2:]):
+        #         x = attention_3d_block(enc_out, dense_size=attention_size, modality='_' + data_types[i])
+        #         x = Dropout(0.5)(x)
+        #         x = Lambda(lambda x: K.expand_dims(x, axis=1))(x)
+        #         att_enc_out.append(x)
+        # aplly many-to-one attention block to the attended modalities
+        x = Concatenate(name='concat_modalities', axis=1)(encoder_outputs)
+        encodings = attention_3d_block(x, dense_size=attention_size, modality='_modality')
 
         model_output = Dense(1, activation='sigmoid',
                              name='output_dense',

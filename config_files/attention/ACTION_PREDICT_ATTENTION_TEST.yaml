@@ -1,6 +1,6 @@
 model_opts:
-  model: MASK_PCPA_4_2D_SPLIT
-  obs_input_type: [local_context_cnn, context_split, pose, box, speed]
+  model: PCPA_MULTI
+  obs_input_type: [local_context_cnn, mask_cnn, pose, box, speed]
   apply_class_weights: True
   normalize_boxes: True
   generator: True
@@ -11,7 +11,7 @@ net_opts:
   cell_type: gru
   backbone: vgg19
 exp_opts:
-  datasets: [jaad_beh, jaad_all]
+  datasets: [jaad_all, jaad_beh]
   batch_size: [2, 2]
-  epochs: [60, 60]  # [40, 40]
+  epochs: [2, 2]
   lr: [5.0e-07, 5.0e-07]
