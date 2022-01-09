@@ -1414,7 +1414,7 @@ class DataGenerator(Sequence):
 
 class PCPA_MULTI(ActionPredict):
     """
-    hierfusion MASK_PCPA
+    hierfusion PCPA_MULTI
     Class init function
 
     Args:
