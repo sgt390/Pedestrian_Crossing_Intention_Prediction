@@ -1529,19 +1529,11 @@ class PCPA_MULTI(ActionPredict):
         current = [x, network_inputs[3]]
         x = Concatenate(name='concat_early3', axis=2)(current)
         x = self._rnn(name='enc3_' + data_types[3], r_sequence=return_sequence)(x)
-        current = [x, network_inputs[4]]
-        x = Concatenate(name='concat_early4', axis=2)(current)
-        x = self._rnn(name='enc4_' + data_types[4], r_sequence=return_sequence)(x)
+        # current = [x, network_inputs[4]]
+        # x = Concatenate(name='concat_early4', axis=2)(current)
+        # x = self._rnn(name='enc4_' + data_types[4], r_sequence=return_sequence)(x)
         encoder_outputs.append(x)
 
-        # if len(encoder_outputs) > 1:
-        #     # for recurrent branches apply many-to-one attention block
-        #     for i, enc_out in enumerate(encoder_outputs[2:]):
-        #         x = attention_3d_block(enc_out, dense_size=attention_size, modality='_' + data_types[i])
-        #         x = Dropout(0.5)(x)
-        #         x = Lambda(lambda x: K.expand_dims(x, axis=1))(x)
-        #         att_enc_out.append(x)
-        # aplly many-to-one attention block to the attended modalities
         x = Concatenate(name='concat_modalities', axis=1)(encoder_outputs)
         encodings = attention_3d_block(x, dense_size=attention_size, modality='_modality')
 
