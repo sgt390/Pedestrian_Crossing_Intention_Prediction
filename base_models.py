@@ -568,7 +568,7 @@ class Time2Vec(keras.layers.Layer):
 
 # def ModelTrunk(name='ModelTrunk', time2vec_dim=1, num_heads=2, head_size=128, ff_dim=None, num_layers=1,
 #                  dropout=0, representation_size=None, input_data=Input(shape=(16, 512))):
-def ModelTrunk(name='ModelTrunk', time2vec_dim=3, num_heads=8, head_size=128, ff_dim=None, num_layers=4,
+def ModelTrunk(name='ModelTrunk', time2vec_dim=1, num_heads=4, head_size=128, ff_dim=None, num_layers=2,
                dropout=0.4, representation_size=None, input_data=Input(shape=(16, 512))):
         time2vec = Time2Vec(kernel_size=time2vec_dim)
         timedist = keras.layers.TimeDistributed(time2vec)
