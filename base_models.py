@@ -505,8 +505,8 @@ def SIMPLE_CNN(input_data=Input(shape=(16, 224, 224, 3))):
 
 
 def AttentionBlock(name='AttentionBlock', num_heads=2, head_size=128,
-                   ff_dim=None, dropout=0, input_data=Input(shape=(16, 1536))):
-    input_shape = input_data.shape
+                   ff_dim=None, dropout=0, input_shape=(16, 1536)):
+    input_data = Input(input_shape)
     if ff_dim is None:
         ff_dim = head_size
 
@@ -572,10 +572,10 @@ def ModelTrunk(name='ModelTrunk', time2vec_dim=1, num_heads=4, head_size=128, ff
                dropout=0.4, representation_size=None, input_data=Input(shape=(16, 512))):
         time2vec = Time2Vec(kernel_size=time2vec_dim)
         timedist = keras.layers.TimeDistributed(time2vec)
+        attention_layers = [AttentionBlock(num_heads=num_heads, head_size=head_size, ff_dim=ff_dim, dropout=dropout) for _ in range(num_layers)]
         if ff_dim is None:
             ff_dim = head_size
         dropout = dropout
-        attention_layers = [AttentionBlock(num_heads=num_heads, head_size=head_size, ff_dim=ff_dim, dropout=dropout) for _ in range(num_layers)]
         dense = tf.keras.layers.Dense(representation_size, name=name+"pre_logits", activation="tanh")
 
         time_embedding = timedist(input_data)
