@@ -1813,14 +1813,14 @@ class PCPA_TR_VISUAL(ActionPredict):
         encoder_outputs.append(x)
         x = self._multi_self_attention(name='enc1_' + data_types[1], representation_size=attention_size, **transformer_params)(network_inputs[1])
         encoder_outputs.append(x)
-        # x = self._rnn(name='enc2_' + data_types[2], r_sequence=return_sequence)(network_inputs[2])
-        # current = [x, network_inputs[3]]
-        # x = Concatenate(name='concat_early3', axis=2)(current)
-        # x = self._rnn(name='enc3_' + data_types[3], r_sequence=return_sequence)(x)
-        # current = [x, network_inputs[4]]
-        # x = Concatenate(name='concat_early4', axis=2)(current)
-        # x = self._rnn(name='enc4_' + data_types[4], r_sequence=return_sequence)(x)
-        # encoder_outputs.append(x)
+        x = self._rnn(name='enc2_' + data_types[2], r_sequence=return_sequence)(network_inputs[2])
+        current = [x, network_inputs[3]]
+        x = Concatenate(name='concat_early3', axis=2)(current)
+        x = self._rnn(name='enc3_' + data_types[3], r_sequence=return_sequence)(x)
+        current = [x, network_inputs[4]]
+        x = Concatenate(name='concat_early4', axis=2)(current)
+        x = self._rnn(name='enc4_' + data_types[4], r_sequence=return_sequence)(x)
+        encoder_outputs.append(x)
 
         x = Concatenate(name='concat_modalities', axis=1)(encoder_outputs)
         encodings = attention_3d_block(x, dense_size=attention_size, modality='_modality')
