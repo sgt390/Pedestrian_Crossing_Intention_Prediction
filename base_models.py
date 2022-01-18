@@ -584,7 +584,7 @@ def ModelTrunk(name='ModelTrunk', time2vec_dim=1, num_heads=4, head_size=128, ff
         for attention_layer in attention_layers:
             x = attention_layer(x)
         x = K.reshape(x, (-1, x.shape[1] * x.shape[2]))  # flat vector of features out
-        x = dense0(x)
+        #x = dense0(x)
         x = dense1(x)
         x = K.expand_dims(x, 1)
         return Model(input_data, x)
