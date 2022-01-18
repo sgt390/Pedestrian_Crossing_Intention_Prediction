@@ -1,6 +1,6 @@
 model_opts:
-  model: PCPA_TR
-  obs_input_type: [local_context_cnn, mask_cnn, pose, box, speed]
+  model: PCPA_TR_VISUAL
+  obs_input_type: [local_context_cnn, mask_cnn]
   apply_class_weights: True
   normalize_boxes: True
   generator: True
@@ -8,7 +8,7 @@ model_opts:
   t_num_heads: 4
   t_head_size: 128
   t_num_layers: 4 # 2
-  t_dropout: None
+  t_dropout: 0.2
 net_opts:
   num_hidden_units: 256
   global_pooling: avg

@@ -572,17 +572,17 @@ def ModelTrunk(name='ModelTrunk', time2vec_dim=1, num_heads=4, head_size=128, ff
                dropout=0.4, representation_size=None, input_data=Input(shape=(16, 512))):
         time2vec = Time2Vec(kernel_size=time2vec_dim)
         timedist = keras.layers.TimeDistributed(time2vec)
-        attention_layers = [AttentionBlock(num_heads=num_heads, head_size=head_size, ff_dim=ff_dim, dropout=dropout) for _ in range(num_layers)]
         if ff_dim is None:
             ff_dim = head_size
-        dropout = dropout
-        dense = tf.keras.layers.Dense(representation_size, name=name+"pre_logits", activation="tanh")
+        attention_layers = [AttentionBlock(num_heads=num_heads, head_size=head_size, ff_dim=ff_dim, dropout=dropout) for _ in range(num_layers)]
+
+        #dense = tf.keras.layers.Dense(representation_size, name=name+"pre_logits", activation="tanh")
 
         time_embedding = timedist(input_data)
         x = K.concatenate([input_data, time_embedding], -1)
         for attention_layer in attention_layers:
             x = attention_layer(x)
         x = K.reshape(x, (-1, x.shape[1] * x.shape[2]))  # flat vector of features out
-        x = dense(x)
+        #x = dense(x)
         x = K.expand_dims(x, 1)
         return Model(input_data, x)
