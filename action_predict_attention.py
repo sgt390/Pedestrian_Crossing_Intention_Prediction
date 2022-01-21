@@ -4,7 +4,7 @@ import wget
 from utils import *
 from base_models import AlexNet, C3DNet, convert_to_fcn, C3DNet2, SIMPLE_CNN, Time2Vec
 from base_models import I3DNet
-from tensorflow.keras.layers import Input, Concatenate, Dense
+from tensorflow.keras.layers import Input, Concatenate, Dense, BatchNormalization
 from tensorflow.keras.layers import GRU, LSTM, GRUCell
 from tensorflow.keras.layers import Dropout, LSTMCell, RNN
 from tensorflow.keras.utils import plot_model
@@ -1054,9 +1054,9 @@ class ActionPredict:
         Returns:
             A list of call backs or None if learning_scheduler is false
         """
-        wandb_callback = WandbCallback(log_evaluation=True)
-        callbacks = [wandb_callback]
-        # callbacks = [] # todo swap
+        # wandb_callback = WandbCallback(log_evaluation=True)
+        # callbacks = [wandb_callback]
+        callbacks = [] # todo swap
 
 
 
@@ -1442,6 +1442,7 @@ class PCPA_TR(ActionPredict):
         self._rnn_cell = GRUCell if cell_type == 'gru' else LSTMCell
         self._3dconv = C3DNet if self._backbone == 'c3d' else I3DNet
         self._multi_self_attention = ModelTrunk
+        self.normlayer = BatchNormalization
 
     def get_data(self, data_type, data_raw, model_opts):
         assert model_opts['obs_length'] == 16
@@ -1529,9 +1530,11 @@ class PCPA_TR(ActionPredict):
         for i in range(0, core_size):
             network_inputs.append(Input(shape=data_sizes[i], name='input_' + data_types[i]))
 
-        x = self._multi_self_attention(name='enc0_' + data_types[0], representation_size=attention_size, **transformer_params)(network_inputs[0])
+        x = self.normlayer(name='norm0_'+data_types[0], axis=-1, momentum=0.99, epsilon=0.001)(network_inputs[0])
+        x = self._multi_self_attention(name='enc0_' + data_types[0], representation_size=attention_size, **transformer_params)(x)
         encoder_outputs.append(x)
-        x = self._multi_self_attention(name='enc1_' + data_types[1], representation_size=attention_size, **transformer_params)(network_inputs[1])
+        x = self.normlayer(name='norm0_'+data_types[0], axis=-1, momentum=0.99, epsilon=0.001)(network_inputs[1])
+        x = self._multi_self_attention(name='enc1_' + data_types[1], representation_size=attention_size, **transformer_params)(x)
         encoder_outputs.append(x)
         x = self._rnn(name='enc2_' + data_types[2], r_sequence=return_sequence)(network_inputs[2])
         current = [x, network_inputs[3]]
