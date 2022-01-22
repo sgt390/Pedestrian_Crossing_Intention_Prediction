@@ -578,7 +578,7 @@ def ModelTrunk(name='ModelTrunk', time2vec_dim=1, num_heads=4, head_size=128, ff
 
         dense0 = tf.keras.layers.Dense(representation_size*12, name=name+"resizing0", activation="relu")
         dense1 = tf.keras.layers.Dense(representation_size*6, name=name+"resizing1", activation="relu")
-        dense2 = tf.keras.layers.Dense(representation_size*6, name=name+"resizing2", activation="relu")
+        dense2 = tf.keras.layers.Dense(representation_size, name=name+"resizing2", activation="relu")
         keras_dropout0 = Dropout(dropout)
         keras_dropout1 = Dropout(dropout)
 
