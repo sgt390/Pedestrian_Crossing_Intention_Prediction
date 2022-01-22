@@ -1530,10 +1530,10 @@ class PCPA_TR(ActionPredict):
         for i in range(0, core_size):
             network_inputs.append(Input(shape=data_sizes[i], name='input_' + data_types[i]))
 
-        x = self.normlayer(name='norm0_'+data_types[0], axis=-1, momentum=0.99, epsilon=0.001)(network_inputs[0])
+        x = self.normlayer(name='norm0_'+data_types[0], axis=-1, momentum=0.99, epsilon=0.0001)(network_inputs[0])
         x = self._multi_self_attention(name='enc0_' + data_types[0], representation_size=attention_size, **transformer_params)(x)
         encoder_outputs.append(x)
-        x = self.normlayer(name='norm1_'+data_types[0], axis=-1, momentum=0.99, epsilon=0.001)(network_inputs[1])
+        x = self.normlayer(name='norm1_'+data_types[0], axis=-1, momentum=0.99, epsilon=0.0001)(network_inputs[1])
         x = self._multi_self_attention(name='enc1_' + data_types[1], representation_size=attention_size, **transformer_params)(x)
         encoder_outputs.append(x)
         x = self._rnn(name='enc2_' + data_types[2], r_sequence=return_sequence)(network_inputs[2])
