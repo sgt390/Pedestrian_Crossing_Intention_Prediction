@@ -292,7 +292,7 @@ class ActionPredict:
         model_inputs = {'input_shape': (224, 224, 3), 'weights': 'imagenet', 'include_top': False}
         vit_model_inputs = {'image_size': 224, 'pretrained': True, 'include_top': False, 'pretrained_top': False}
 
-        base_model = backbone_dict[self._backbone](**model_inputs)
+        base_model = backbone_dict[self._backbone](**model_inputs) if self._backbone in backbone_dict else None
         vit16_model = vit.vit_b16(**vit_model_inputs)
         vit32_model = vit.vit_b32(**vit_model_inputs)
 
@@ -348,7 +348,15 @@ class ActionPredict:
                         img_features = tf.squeeze(img_features)
                         # with tf.compact.v1.Session():
                         img_features = img_features.numpy()
-
+                    elif crop_type == 'local_context_vit':
+                        img = image.load_img(imp, target_size=(224, 224))
+                        x = image.img_to_array(img)
+                        x = np.expand_dims(x, axis=0)
+                        x = vit.preprocess_inputs(x)
+                        img_features = vit32_model.predict(x)
+                        img_features = tf.squeeze(img_features)
+                        # with tf.compact.v1.Session():
+                        img_features = img_features.numpy()
                     elif crop_type == 'mask_cnn':
                         img_data = cv2.imread(imp)
                         ori_dim = img_data.shape
@@ -911,6 +919,8 @@ class ActionPredict:
             # data_gen_params['crop_mode'] = 'pad_resize'
         elif 'local_context_cnn' in feature_type:
             data_gen_params['crop_type'] = 'local_context_cnn'
+        elif 'local_context_vit' in feature_type:
+            data_gen_params['crop_type'] = 'local_context_vit'
         elif 'local_context' in feature_type:
             data_gen_params['crop_type'] = 'context'
             data_gen_params['crop_resize_ratio'] = eratio
