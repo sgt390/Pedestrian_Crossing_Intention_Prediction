@@ -5,7 +5,7 @@ model_opts:
   normalize_boxes: True
   generator: True
   t_time2vec_dim: 1
-  t_num_heads: 1
+  t_num_heads: 2
   t_head_size: 128 # 128
   t_num_layers: 2 # 2
   t_dropout: 0.2
