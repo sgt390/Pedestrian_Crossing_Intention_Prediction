@@ -2818,7 +2818,7 @@ class MASK_PCPA_4_2D_TTE(ActionPredict):
         return net_model
 
 
-class MASK_PCPA_4_2D_BATCH(ActionPredict):
+class MASK_PCPA_4_2D_NORM(ActionPredict):
     """
     hierfusion MASK_PCPA
     Class init function
