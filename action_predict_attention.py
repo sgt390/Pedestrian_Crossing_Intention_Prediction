@@ -273,7 +273,7 @@ class ActionPredict:
         model_inputs = {'input_shape': (224, 224, 3), 'weights': 'imagenet', 'include_top': False}
         vit_model_inputs = {'image_size': 224, 'pretrained': True, 'include_top': False, 'pretrained_top': False}
 
-        base_model = backbone_dict[self._backbone](**model_inputs)
+        base_model = backbone_dict[self._backbone](**model_inputs) if self._backbone in backbone_dict else None
         vit16_model = vit.vit_b16(**vit_model_inputs)
         vit32_model = vit.vit_b32(**vit_model_inputs)
 
@@ -329,6 +329,36 @@ class ActionPredict:
                         img_features = tf.squeeze(img_features)
                         # with tf.compact.v1.Session():
                         img_features = img_features.numpy()
+
+                    elif crop_type == 'mask':
+                        img_data = cv2.imread(imp)
+                        ori_dim = img_data.shape
+                        # bbox = jitter_bbox(imp, [b], 'enlarge', crop_resize_ratio)[0]
+                        # bbox = squarify(bbox, 1, img_data.shape[1])
+                        # bbox = list(map(int, bbox[0:4]))
+                        b = list(map(int, b[0:4]))
+                        ## img_data --- > mask_img_data (deeplabV3)
+                        original_im = Image.fromarray(cv2.cvtColor(img_data, cv2.COLOR_BGR2RGB))
+                        resized_im, seg_map = segmodel.run(original_im)
+                        resized_im = np.array(resized_im)
+                        seg_image = label_to_color_image(seg_map).astype(np.uint8)
+                        seg_image = cv2.cvtColor(seg_image, cv2.COLOR_BGR2RGB)
+                        seg_image = cv2.addWeighted(resized_im, 0.5, seg_image, 0.5, 0)
+                        img_data = cv2.resize(seg_image, (ori_dim[1], ori_dim[0]))
+
+                        # ped_mask = np.zeros((b_org[3]-b_org[1],b_org[2]-b_org[0], 3), dtype="uint8")
+                        # ped_mask = init_canvas(b_org[3]-b_org[1], b_org[2]-b_org[0], color=(0, 0, 255))
+                        # img_data[b_org[1]:b_org[3], b_org[0]:b_org[2], :]
+                        ## mask_img_data + pd highlight ---> final_mask_img_data
+                        ped_mask = init_canvas(b[2] - b[0], b[3] - b[1], color=(255, 255, 255))
+                        # ped_fuse = cv2.addWeighted(img_data[b[1]:b[3], b[0]:b[2]], 0.5, ped_mask, 0.5, 0)
+                        img_data[b[1]:b[3], b[0]:b[2]] = ped_mask
+                        # cv2.imshow('mask_demo',img_data)
+                        # cv2.waitkey(0)
+                        # cv2.destroyAllWindows()
+                        img_features = cv2.resize(img_data, target_dim)
+                        if flip_image:
+                            img_features = cv2.flip(img_features, 1)
 
                     elif crop_type == 'mask_cnn':
                         img_data = cv2.imread(imp)
@@ -1966,6 +1996,157 @@ class LATER_TST_FULL(ActionPredict):
         encoder_outputs.append(x)
         x = self.normlayer(name='norm1_'+data_types[1], axis=-1, momentum=0.99, epsilon=0.0001)(network_inputs[1])
         x = self._multi_self_attention(name='enc1_' + data_types[1], representation_size=attention_size, **transformer_params)(x)
+        encoder_outputs.append(x)
+        x = self.normlayer(name='norm2_'+data_types[2], axis=-1, momentum=0.99, epsilon=0.0001)(network_inputs[2])
+        x = self._multi_self_attention(name='enc2_' + data_types[2], representation_size=attention_size, input_shape=network_inputs[2].shape[1:], **transformer_params)(x)
+        encoder_outputs.append(x)
+        x = self.normlayer(name='norm3_'+data_types[3], axis=-1, momentum=0.99, epsilon=0.0001)(network_inputs[3])
+        x = self._multi_self_attention(name='enc3_' + data_types[3], representation_size=attention_size, input_shape=network_inputs[3].shape[1:], **transformer_params)(x)
+        encoder_outputs.append(x)
+        x = self.normlayer(name='norm4_'+data_types[4], axis=-1, momentum=0.99, epsilon=0.0001)(network_inputs[4])
+        x = self._multi_self_attention(name='enc4_' + data_types[4], representation_size=attention_size, input_shape=network_inputs[4].shape[1:], **transformer_params)(x)
+        encoder_outputs.append(x)
+
+        x = Concatenate(name='concat_modalities', axis=1)(encoder_outputs)
+        encodings = attention_3d_block(x, dense_size=attention_size, modality='_modality')
+
+        model_output = Dense(1, activation='sigmoid',
+                             name='output_dense',
+                             activity_regularizer=regularizers.l2(0.001))(encodings)
+
+        net_model = Model(inputs=network_inputs,
+                          outputs=model_output)
+        net_model.summary()
+        plot_model(net_model, to_file='LATER_TST_FULL.png')
+        return net_model
+
+
+
+class C3D_TST(ActionPredict):
+    """
+    later TST on text+images
+    Class init function
+
+    Args:
+        num_hidden_units: Number of recurrent hidden layers
+        cell_type: Type of RNN cell
+        **kwargs: Description
+    """
+
+    def __init__(self,
+                 num_hidden_units=256,
+                 cell_type='gru',
+                 **kwargs):
+        """
+        Class init function
+
+        Args:
+            num_hidden_units: Number of recurrent hidden layers
+            cell_type: Type of RNN cell
+            **kwargs: Description
+        """
+        super().__init__(**kwargs)
+        # Network parameters
+        self._num_hidden_units = num_hidden_units
+        self._rnn = self._gru if cell_type == 'gru' else self._lstm
+        self._rnn_cell = GRUCell if cell_type == 'gru' else LSTMCell
+        self._3dconv = C3DNet if self._backbone == 'c3d' else I3DNet
+        self._multi_self_attention = ModelTrunk
+        self.normlayer = BatchNormalization
+
+    def get_data(self, data_type, data_raw, model_opts):
+        assert model_opts['obs_length'] == 16
+        model_opts['normalize_boxes'] = False
+        self._generator = model_opts.get('generator', False)
+        data_type_sizes_dict = {}
+        process = model_opts.get('process', True)
+        dataset = model_opts['dataset']
+        data, neg_count, pos_count = self.get_data_sequence(data_type, data_raw, model_opts)
+
+        data_type_sizes_dict['box'] = data['box'].shape[1:]
+        if 'speed' in data.keys():
+            data_type_sizes_dict['speed'] = data['speed'].shape[1:]
+        # if 'context_cnn' in data.keys():
+        #     data_type_sizes_dict['context_cnn'] = data['context_cnn'].shape[1:]
+
+        # Store the type and size of each image
+        _data = []
+        data_sizes = []
+        data_types = []
+
+        model_opts_3d = model_opts.copy()
+
+        for d_type in model_opts['obs_input_type']:
+            if 'local' in d_type or 'context' in d_type or 'mask' in d_type:
+                if self._backbone == 'c3d':
+                    model_opts_3d['target_dim'] = (112, 112)
+                model_opts_3d['process'] = False
+                features, feat_shape = self.get_context_data(model_opts_3d, data, data_type, d_type)
+            elif 'pose' in d_type:
+                path_to_pose, _ = get_path(save_folder='poses',
+                                           dataset=dataset,
+                                           save_root_folder='data/features')
+                features = get_pose(data['image'],
+                                    data['ped_id'],
+                                    data_type=data_type,
+                                    file_path=path_to_pose,
+                                    dataset=model_opts['dataset'])
+                feat_shape = features.shape[1:]
+            else:
+                features = data[d_type]
+                feat_shape = features.shape[1:]
+            _data.append(features)
+            data_sizes.append(feat_shape)
+            data_types.append(d_type)
+        # create the final data file to be returned
+        if self._generator:
+            _data = (DataGenerator(data=_data,
+                                   labels=data['crossing'],
+                                   data_sizes=data_sizes,
+                                   process=process,
+                                   global_pooling=None,
+                                   input_type_list=model_opts['obs_input_type'],
+                                   batch_size=model_opts['batch_size'],
+                                   shuffle=data_type != 'test',
+                                   to_fit=data_type != 'test'), data['crossing'])  # set y to None
+        # global_pooling=self._global_pooling,
+        else:
+            _data = (_data, data['crossing'])
+
+        return {'data': _data,
+                'ped_id': data['ped_id'],
+                'tte': data['tte'],
+                'image': data['image'],
+                'data_params': {'data_types': data_types,
+                                'data_sizes': data_sizes,
+                                'transformer_params': {'time2vec_dim': model_opts['t_time2vec_dim'],
+                                                       'num_heads': model_opts['t_num_heads'],
+                                                       'head_size': model_opts['t_head_size'],
+                                                       'num_layers': model_opts['t_num_layers'],
+                                                       'dropout': model_opts['t_dropout']}
+                                },
+                'count': {'neg_count': neg_count, 'pos_count': pos_count}}
+
+    def get_model(self, data_params):
+        return_sequence = True
+        data_sizes = data_params['data_sizes']
+        data_types = data_params['data_types']
+        transformer_params = data_params['transformer_params']
+        network_inputs = []
+        encoder_outputs = []
+        core_size = len(data_sizes)
+
+        attention_size = self._num_hidden_units
+        for i in range(0, core_size):
+            network_inputs.append(Input(shape=data_sizes[i], name='input_' + data_types[i]))
+
+        # x = self.normlayer(name='norm0_'+data_types[0], axis=-1, momentum=0.99, epsilon=0.0001)(network_inputs[0])
+        x = self._3dconv(input_data=network_inputs[0])
+        # x = self._multi_self_attention(name='enc0_' + data_types[0], representation_size=attention_size, **transformer_params)(x)
+        encoder_outputs.append(x)
+        #x = self.normlayer(name='norm1_'+data_types[1], axis=-1, momentum=0.99, epsilon=0.0001)(network_inputs[1])
+        #x = self._multi_self_attention(name='enc1_' + data_types[1], representation_size=attention_size, **transformer_params)(x)
+        x = self._3dconv(input_data=network_inputs[1])
         encoder_outputs.append(x)
         x = self.normlayer(name='norm2_'+data_types[2], axis=-1, momentum=0.99, epsilon=0.0001)(network_inputs[2])
         x = self._multi_self_attention(name='enc2_' + data_types[2], representation_size=attention_size, input_shape=network_inputs[2].shape[1:], **transformer_params)(x)
