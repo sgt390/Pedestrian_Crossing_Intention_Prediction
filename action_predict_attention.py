@@ -2141,14 +2141,14 @@ class C3D_TST(ActionPredict):
             network_inputs.append(Input(shape=data_sizes[i], name='input_' + data_types[i]))
 
         # x = self.normlayer(name='norm0_'+data_types[0], axis=-1, momentum=0.99, epsilon=0.0001)(network_inputs[0])
-        conv3d = self._3dconv(input_data=network_inputs[0])
+        conv3d = self._3dconv(name='enc0_' + data_types[0], input_data=network_inputs[0])
         x = Flatten(name='flatten_conv3d_0')(conv3d.output)
         x = Dense(name='emb_' + self._backbone + '_0',
                   units=attention_size,
                   activation='sigmoid')(x)
         x = Lambda(lambda y: K.expand_dims(y, axis=1))(x)
         encoder_outputs.append(x)
-        conv3d = self._3dconv(input_data=network_inputs[1])
+        conv3d = self._3dconv(name='enc1_' + data_types[1], input_data=network_inputs[1])
         x = Flatten(name='flatten_conv3d_1')(conv3d.output)
         x = Dense(name='emb_' + self._backbone + '_1',
                   units=attention_size,
