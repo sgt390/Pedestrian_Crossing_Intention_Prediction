@@ -1442,7 +1442,7 @@ class DataGenerator(Sequence):
         return np.array(self.labels[indices])
 
 
-class PCPA_TR(ActionPredict):
+class TST_VISION(ActionPredict):
     """
     hierfusion PCPA_MULTI
     Class init function
@@ -2141,12 +2141,19 @@ class C3D_TST(ActionPredict):
             network_inputs.append(Input(shape=data_sizes[i], name='input_' + data_types[i]))
 
         # x = self.normlayer(name='norm0_'+data_types[0], axis=-1, momentum=0.99, epsilon=0.0001)(network_inputs[0])
-        x = self._3dconv(input_data=network_inputs[0])
-        # x = self._multi_self_attention(name='enc0_' + data_types[0], representation_size=attention_size, **transformer_params)(x)
+        conv3d = self._3dconv(input_data=network_inputs[0])
+        x = Flatten(name='flatten_conv3d_0')(conv3d.output)
+        x = Dense(name='emb_' + self._backbone + '_0',
+                  units=attention_size,
+                  activation='sigmoid')(x)
+        x = Lambda(lambda y: K.expand_dims(y, axis=1))(x)
         encoder_outputs.append(x)
-        #x = self.normlayer(name='norm1_'+data_types[1], axis=-1, momentum=0.99, epsilon=0.0001)(network_inputs[1])
-        #x = self._multi_self_attention(name='enc1_' + data_types[1], representation_size=attention_size, **transformer_params)(x)
-        x = self._3dconv(input_data=network_inputs[1])
+        conv3d = self._3dconv(input_data=network_inputs[1])
+        x = Flatten(name='flatten_conv3d_1')(conv3d.output)
+        x = Dense(name='emb_' + self._backbone + '_1',
+                  units=attention_size,
+                  activation='sigmoid')(x)
+        x = Lambda(lambda y: K.expand_dims(y, axis=1))(x)
         encoder_outputs.append(x)
         x = self.normlayer(name='norm2_'+data_types[2], axis=-1, momentum=0.99, epsilon=0.0001)(network_inputs[2])
         x = self._multi_self_attention(name='enc2_' + data_types[2], representation_size=attention_size, input_shape=network_inputs[2].shape[1:], **transformer_params)(x)
@@ -2168,5 +2175,6 @@ class C3D_TST(ActionPredict):
         net_model = Model(inputs=network_inputs,
                           outputs=model_output)
         net_model.summary()
-        plot_model(net_model, to_file='LATER_TST_FULL.png')
+        plot_model(net_model, to_file='LATER_TST_C3D.png')
         return net_model
+
