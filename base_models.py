@@ -101,7 +101,8 @@ def convert_to_fcn(model, classes=2, activation='softmax',
 
 
 def C3DNet(freeze_conv_layers=False, weights=None,
-           dense_activation='softmax', dropout=0.5, include_top=False, input_data=Input(shape=(16, 112, 112, 3))):
+           dense_activation='softmax', dropout=0.5, include_top=False, input_data=Input(shape=(16, 112, 112, 3)),
+           name=''):
     """
     C3D model implementation. Source: https://github.com/adamcasson/c3d
     Reference: Du Tran, Lubomir Bourdev, Rob Fergus, Lorenzo Torresani,and Manohar Paluri. 
@@ -116,39 +117,39 @@ def C3DNet(freeze_conv_layers=False, weights=None,
         C3D model
     """
     # input_data = Input(shape=(16, 112, 112, 3))
-    model = Conv3D(64, 3, activation='relu', padding='same', name='conv1')(input_data)
-    model = MaxPooling3D(pool_size=(1, 2, 2), strides=(1, 2, 2), padding='valid', name='pool1')(model)
+    model = Conv3D(64, 3, activation='relu', padding='same', name=name+'conv1')(input_data)
+    model = MaxPooling3D(pool_size=(1, 2, 2), strides=(1, 2, 2), padding='valid', name=name+'pool1')(model)
     # 2nd layer group
-    model = Conv3D(128, 3, activation='relu', padding='same', name='conv2')(model)
-    model = MaxPooling3D(pool_size=(2, 2, 2), strides=(2, 2, 2), padding='valid', name='pool2')(model)
+    model = Conv3D(128, 3, activation='relu', padding='same', name=name+'conv2')(model)
+    model = MaxPooling3D(pool_size=(2, 2, 2), strides=(2, 2, 2), padding='valid', name=name+'pool2')(model)
     # 3rd layer group
-    model = Conv3D(256, 3, activation='relu', padding='same', name='conv3a')(model)
-    model = Conv3D(256, 3, activation='relu', padding='same', name='conv3b')(model)
-    model = MaxPooling3D(pool_size=(2, 2, 2), strides=(2, 2, 2), padding='valid', name='pool3')(model)
+    model = Conv3D(256, 3, activation='relu', padding='same', name=name+'conv3a')(model)
+    model = Conv3D(256, 3, activation='relu', padding='same', name=name+'conv3b')(model)
+    model = MaxPooling3D(pool_size=(2, 2, 2), strides=(2, 2, 2), padding='valid', name=name+'pool3')(model)
     # 4th layer group
-    model = Conv3D(512, 3, activation='relu', padding='same', name='conv4a')(model)
-    model = Conv3D(512, 3, activation='relu', padding='same', name='conv4b')(model)
-    model = MaxPooling3D(pool_size=(2, 2, 2), strides=(2, 2, 2), padding='valid', name='pool4')(model)
+    model = Conv3D(512, 3, activation='relu', padding='same', name=name+'conv4a')(model)
+    model = Conv3D(512, 3, activation='relu', padding='same', name=name+'conv4b')(model)
+    model = MaxPooling3D(pool_size=(2, 2, 2), strides=(2, 2, 2), padding='valid', name=name+'pool4')(model)
     # 5th layer group
-    model = Conv3D(512, 3, activation='relu', padding='same', name='conv5a')(model)
-    model = Conv3D(512, 3, activation='relu', padding='same', name='conv5b')(model)
-    model = ZeroPadding3D(padding=(0, 1, 1), name='zeropad5')(model)  # ((0, 0), (0, 1), (0, 1))
-    model = MaxPooling3D(pool_size=(2, 2, 2), strides=(2, 2, 2), padding='valid', name='pool5')(model)
+    model = Conv3D(512, 3, activation='relu', padding='same', name=name+'conv5a')(model)
+    model = Conv3D(512, 3, activation='relu', padding='same', name=name+'conv5b')(model)
+    model = ZeroPadding3D(padding=(0, 1, 1), name=name+'zeropad5')(model)  # ((0, 0), (0, 1), (0, 1))
+    model = MaxPooling3D(pool_size=(2, 2, 2), strides=(2, 2, 2), padding='valid', name=name+'pool5')(model)
     model_flatten = Flatten(name='flatten')(model)
 
     # # FC layers group
-    model = Dense(4096, activation='relu', name='fc6')(model_flatten)
+    model = Dense(4096, activation='relu', name=name+'fc6')(model_flatten)
     model = Dropout(dropout)(model)
-    model = Dense(4096, activation='relu', name='fc7')(model)
+    model = Dense(4096, activation='relu', name=name+'fc7')(model)
     model_fc7 = Dropout(dropout)(model)
-    model_fc8 = Dense(487, activation=dense_activation, name='fc8')(model_fc7)
+    model_fc8 = Dense(487, activation=dense_activation, name=name+'fc8')(model_fc7)
 
     net_model = Model(input_data, model_fc8)
     if weights is not None:
         net_model.load_weights(weights)
 
     if include_top:
-        model_fc8_new = Dense(1, activation=dense_activation, name='fc8')(model_fc7)
+        model_fc8_new = Dense(1, activation=dense_activation, name=name+'fc8')(model_fc7)
         net_model = Model(input_data, model_fc8_new)
         if freeze_conv_layers:
             for layer in model.layers[:-5]:
