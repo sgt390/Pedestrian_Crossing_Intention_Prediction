@@ -5,12 +5,15 @@ from tensorflow.keras.layers import Conv3D, MaxPooling3D, ZeroPadding3D
 from tensorflow.keras.layers import AveragePooling3D
 from tensorflow.keras.layers import Reshape
 from tensorflow.keras.layers import Lambda, BatchNormalization
-from tensorflow.keras.models import Model
+from tensorflow.keras.models import Model, Sequential
+from tensorflow.keras.models import Model, Sequential
+from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import Input, Concatenate, Dense
 import tensorflow.keras.backend as K
 from tensorflow import keras
 from tensorflow_addons.layers import MultiHeadAttention
 import tensorflow as tf
+from keras.utils import data_utils
 
 def AlexNet(include_top=True,
             weights=None,
@@ -570,7 +573,7 @@ class Time2Vec(keras.layers.Layer):
 # def ModelTrunk(name='ModelTrunk', time2vec_dim=1, num_heads=2, head_size=128, ff_dim=None, num_layers=1,
 #                  dropout=0, representation_size=None, input_data=Input(shape=(16, 512))):
 def ModelTrunk(name='ModelTrunk', time2vec_dim=1, num_heads=4, head_size=128, ff_dim=None, num_layers=2,
-               dropout=0.4, representation_size=None, input_shape=(16, 512)):
+               dropout=0.4, representation_size=None, input_shape=(16, 512), include_dense_0=True):
     input_data = Input(input_shape)
     time2vec = Time2Vec(kernel_size=time2vec_dim)
     timedist = keras.layers.TimeDistributed(time2vec)
@@ -590,7 +593,8 @@ def ModelTrunk(name='ModelTrunk', time2vec_dim=1, num_heads=4, head_size=128, ff
     for attention_layer in attention_layers:
         x = attention_layer(x)
     x = K.reshape(x, (-1, x.shape[1] * x.shape[2]))  # flat vector of features out
-    x = keras_dropout0(x)
+    if include_dense_0:
+        x = keras_dropout0(x)
     x = dense0(x)
     x = keras_dropout1(x)
     x = dense1(x)
@@ -598,3 +602,67 @@ def ModelTrunk(name='ModelTrunk', time2vec_dim=1, num_heads=4, head_size=128, ff
     x = dense2(x)
     x = K.expand_dims(x, 1)
     return Model(input_data, x)
+
+
+def C3D_BASE(weights='sports1M'):
+    """Instantiates a C3D Kerasl model
+
+    Keyword arguments:
+    weights -- weights to load into model. (default is sports1M)
+
+    Returns:
+    A Keras model.
+
+    """
+
+    if weights not in {'sports1M', None}:
+        raise ValueError('weights should be either be sports1M or None')
+
+    if K.image_data_format() == 'channels_last':
+        shape = (16, 112, 112, 3)
+    else:
+        shape = (3, 16, 112, 112)
+
+    model = Sequential(name='extr_sports')
+    model.add(Conv3D(64, 3, activation='relu', padding='same', name='conv1', input_shape=shape))
+    model.add(MaxPooling3D(pool_size=(1, 2, 2), strides=(1, 2, 2), padding='same', name='pool1'))
+
+    model.add(Conv3D(128, 3, activation='relu', padding='same', name='conv2'))
+    model.add(MaxPooling3D(pool_size=(2, 2, 2), strides=(2, 2, 2), padding='valid', name='pool2'))
+
+    model.add(Conv3D(256, 3, activation='relu', padding='same', name='conv3a'))
+    model.add(Conv3D(256, 3, activation='relu', padding='same', name='conv3b'))
+    model.add(MaxPooling3D(pool_size=(2, 2, 2), strides=(2, 2, 2), padding='valid', name='pool3'))
+
+    model.add(Conv3D(512, 3, activation='relu', padding='same', name='conv4a'))
+    model.add(Conv3D(512, 3, activation='relu', padding='same', name='conv4b'))
+    model.add(MaxPooling3D(pool_size=(2, 2, 2), strides=(2, 2, 2), padding='valid', name='pool4'))
+
+    model.add(Conv3D(512, 3, activation='relu', padding='same', name='conv5a'))
+    model.add(Conv3D(512, 3, activation='relu', padding='same', name='conv5b'))
+    model.add(ZeroPadding3D(padding=(0, 1, 1)))
+    model.add(MaxPooling3D(pool_size=(2, 2, 2), strides=(2, 2, 2), padding='valid', name='pool5'))
+
+    model.add(Flatten())
+
+    model.add(Dense(4096, activation='relu', name='fc6'))
+    model.add(Dropout(0.5))
+    model.add(Dense(4096, activation='relu', name='fc7'))
+    model.add(Dropout(0.5))
+    model.add(Dense(487, activation='softmax', name='fc8'))
+
+    return model
+
+
+def C3D_SPORTS():
+    model = C3D_BASE()
+    WEIGHTS_PATH = 'https://github.com/adamcasson/c3d/releases/download/v0.1/sports1M_weights_tf.h5'
+    weights_path = data_utils.get_file('sports1M_weights_tf.h5',
+                            WEIGHTS_PATH,
+                            cache_subdir='models',
+                            md5_hash='b7a93b2f9156ccbebe3ca24b41fc5402')
+
+    model.load_weights(weights_path)
+    model.trainable = False
+
+    return model
