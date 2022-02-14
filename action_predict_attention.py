@@ -2314,13 +2314,13 @@ class C3D_TRANSFORMER(ActionPredict):
         encoder_outputs.append(x)
 
         x = self.normlayer(name='norm2_'+data_types[2], axis=-1, momentum=0.99, epsilon=0.0001)(network_inputs[2])
-        x = self._multi_self_attention(name='enc2_' + data_types[2], representation_size=attention_size, input_shape=network_inputs[2].shape[1:], **transformer_params)(x)
+        x = self._multi_self_attention(name='enc2_' + data_types[2], representation_size=attention_size, input_shape=network_inputs[2].shape[1:], **transformer_params, include_dense_0=False)(x)
         encoder_outputs.append(x)
         x = self.normlayer(name='norm3_'+data_types[3], axis=-1, momentum=0.99, epsilon=0.0001)(network_inputs[3])
-        x = self._multi_self_attention(name='enc3_' + data_types[3], representation_size=attention_size, input_shape=network_inputs[3].shape[1:], **transformer_params)(x)
+        x = self._multi_self_attention(name='enc3_' + data_types[3], representation_size=attention_size, input_shape=network_inputs[3].shape[1:], **transformer_params, include_dense_0=False)(x)
         encoder_outputs.append(x)
         x = self.normlayer(name='norm4_'+data_types[4], axis=-1, momentum=0.99, epsilon=0.0001)(network_inputs[4])
-        x = self._multi_self_attention(name='enc4_' + data_types[4], representation_size=attention_size, input_shape=network_inputs[4].shape[1:], **transformer_params)(x)
+        x = self._multi_self_attention(name='enc4_' + data_types[4], representation_size=attention_size, input_shape=network_inputs[4].shape[1:], **transformer_params, include_dense_0=False)(x)
         encoder_outputs.append(x)
 
         x = Concatenate(name='concat_modalities', axis=1)(encoder_outputs)
