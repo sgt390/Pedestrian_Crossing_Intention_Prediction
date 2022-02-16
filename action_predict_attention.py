@@ -274,8 +274,9 @@ class ActionPredict:
         vit_model_inputs = {'image_size': 224, 'pretrained': True, 'include_top': False, 'pretrained_top': False}
 
         base_model = backbone_dict[self._backbone](**model_inputs) if self._backbone in backbone_dict else None
-        vit16_model = vit.vit_b16(**vit_model_inputs)
-        vit32_model = vit.vit_b32(**vit_model_inputs)
+        if 'vit' in crop_type:
+            vit16_model = vit.vit_b16(**vit_model_inputs)
+            vit32_model = vit.vit_b32(**vit_model_inputs)
 
         backbone_model = base_model
         # backbone_model = Model(inputs=base_model.input, outputs=base_model.get_layer('block4_pool').output)
@@ -907,6 +908,9 @@ class ActionPredict:
         if 'local_box' in feature_type:
             data_gen_params['crop_type'] = 'bbox'
             data_gen_params['crop_mode'] = 'pad_resize'
+        elif 'mask112' in feature_type:
+            data_gen_params['target_dim'] = (112, 112)
+            data_gen_params['crop_type'] = 'mask'
         elif 'mask_cnn' in feature_type:
             data_gen_params['crop_type'] = 'mask_cnn'
         elif 'context_split' in feature_type:
@@ -922,6 +926,10 @@ class ActionPredict:
             # data_gen_params['crop_mode'] = 'pad_resize'
         elif 'local_context_cnn' in feature_type:
             data_gen_params['crop_type'] = 'local_context_cnn'
+        elif 'local_context112' in feature_type:
+            data_gen_params['crop_type'] = 'context'
+            data_gen_params['crop_resize_ratio'] = eratio
+            data_gen_params['target_dim'] = (112, 112)
         elif 'local_context' in feature_type:
             data_gen_params['crop_type'] = 'context'
             data_gen_params['crop_resize_ratio'] = eratio
@@ -930,7 +938,9 @@ class ActionPredict:
             data_gen_params['crop_resize_ratio'] = eratio
         elif 'scene_context' in feature_type:
             data_gen_params['crop_type'] = 'scene_context'
+
         save_folder_name = feature_type
+
         if 'flow' not in feature_type:
             save_folder_name = '_'.join([feature_type, aux_name])
             if 'local_context' in feature_type or 'surround' in feature_type:
