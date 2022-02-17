@@ -600,19 +600,19 @@ class ActionPredict:
             sequences.append(img_seq)
         sequences = np.array(sequences)
         # compute size of the features after the processing
-        if self._generator:
-            with open(sequences[0][0], 'rb') as fid:
-                feat_shape = pickle.load(fid).shape
-            if process:
-                if self._global_pooling in ['max', 'avg']:
-                    feat_shape = feat_shape[-1]
-                else:
-                    feat_shape = np.prod(feat_shape)
-            if not isinstance(feat_shape, tuple):
-                feat_shape = (feat_shape,)
-            feat_shape = (np.array(bbox_sequences).shape[1],) + feat_shape
-        else:
-            feat_shape = sequences.shape[1:]
+        # if self._generator: # todo
+        #     with open(sequences[0][0], 'rb') as fid:
+        #         feat_shape = pickle.load(fid).shape
+        #     if process:
+        #         if self._global_pooling in ['max', 'avg']:
+        #             feat_shape = feat_shape[-1]
+        #         else:
+        #             feat_shape = np.prod(feat_shape)
+        #     if not isinstance(feat_shape, tuple):
+        #         feat_shape = (feat_shape,)
+        #     feat_shape = (np.array(bbox_sequences).shape[1],) + feat_shape
+        # else:
+        #     feat_shape = sequences.shape[1:] #todo
 
         return sequences, feat_shape
 
@@ -2308,7 +2308,7 @@ class C3D_TRANSFORMER(ActionPredict):
 
         # x = self.normlayer(name='norm0_'+data_types[0], axis=-1, momentum=0.99, epsilon=0.0001)(network_inputs[0])
         conv3d = self._3dconv(network_inputs[0])
-        x = Flatten(name='flatten_conv3d_0')(conv3d.output)
+        x = Flatten(name='flatten_conv3d_0')(conv3d)
         x = Dense(name='emb_' + self._backbone + '_0',
                   units=attention_size,
                   activation='sigmoid')(x)
@@ -2316,7 +2316,7 @@ class C3D_TRANSFORMER(ActionPredict):
         encoder_outputs.append(x)
 
         conv3d = self._3dconv(network_inputs[1])
-        x = Flatten(name='flatten_conv3d_1')(conv3d.output)
+        x = Flatten(name='flatten_conv3d_1')(conv3d)
         x = Dense(name='emb_' + self._backbone + '_1',
                   units=attention_size,
                   activation='sigmoid')(x)
