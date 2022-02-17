@@ -600,19 +600,19 @@ class ActionPredict:
             sequences.append(img_seq)
         sequences = np.array(sequences)
         # compute size of the features after the processing
-        # if self._generator: # todo
-        #     with open(sequences[0][0], 'rb') as fid:
-        #         feat_shape = pickle.load(fid).shape
-        #     if process:
-        #         if self._global_pooling in ['max', 'avg']:
-        #             feat_shape = feat_shape[-1]
-        #         else:
-        #             feat_shape = np.prod(feat_shape)
-        #     if not isinstance(feat_shape, tuple):
-        #         feat_shape = (feat_shape,)
-        #     feat_shape = (np.array(bbox_sequences).shape[1],) + feat_shape
-        # else:
-        #     feat_shape = sequences.shape[1:] #todo
+        if self._generator:
+            with open(sequences[0][0], 'rb') as fid:
+                feat_shape = pickle.load(fid).shape
+            if process:
+                if self._global_pooling in ['max', 'avg']:
+                    feat_shape = feat_shape[-1]
+                else:
+                    feat_shape = np.prod(feat_shape)
+            if not isinstance(feat_shape, tuple):
+                feat_shape = (feat_shape,)
+            feat_shape = (np.array(bbox_sequences).shape[1],) + feat_shape
+        else:
+            feat_shape = sequences.shape[1:]
 
         return sequences, feat_shape
 
