@@ -1441,6 +1441,8 @@ class DataGenerator(Sequence):
                                 features_batch[i, j,] = tf.reshape(img_features, self.data_sizes[input_type_idx][1:])  # todo fix this custom size
                             elif 'context_split' in input_type:
                                 features_batch[i, j, ] = tf.reshape(img_features, self.data_sizes[input_type_idx][1:])
+                            elif 'context' in input_type:
+                                features_batch[i, j, ] = tf.reshape(img_features, self.data_sizes[input_type_idx][1:])
                             else:
                                 features_batch[i, j,] = img_features
                 else:
