@@ -4,6 +4,12 @@ model_opts:
   apply_class_weights: True
   normalize_boxes: True
   generator: True
+  time_to_event: [30, 60]
+  t_time2vec_dim: 1
+  t_num_heads: 4
+  t_head_size: 128
+  t_num_layers: 2 # 2
+  t_dropout: 0.5
 net_opts:
   num_hidden_units: 256
   global_pooling: avg

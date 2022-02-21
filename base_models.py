@@ -595,7 +595,7 @@ def ModelTrunk(name='ModelTrunk', time2vec_dim=1, num_heads=4, head_size=128, ff
     x = K.reshape(x, (-1, x.shape[1] * x.shape[2]))  # flat vector of features out
     if include_dense_0:
         x = keras_dropout0(x)
-    x = dense0(x)
+        x = dense0(x)
     x = keras_dropout1(x)
     x = dense1(x)
     x = keras_dropout2(x)
@@ -603,6 +603,37 @@ def ModelTrunk(name='ModelTrunk', time2vec_dim=1, num_heads=4, head_size=128, ff
     x = K.expand_dims(x, 1)
     return Model(input_data, x)
 
+
+def ModelTrunk_2(name='ModelTrunk', time2vec_dim=1, num_heads=4, head_size=128, ff_dim=None, num_layers=2,
+               dropout=0.4, representation_size=None, input_shape=(16, 512), include_dense_0=True):
+    input_data = Input(input_shape)
+    time2vec = Time2Vec(kernel_size=time2vec_dim)
+    timedist = keras.layers.TimeDistributed(time2vec)
+    if ff_dim is None:
+        ff_dim = head_size
+    attention_layers = [AttentionBlock(num_heads=num_heads, head_size=head_size, ff_dim=ff_dim, input_shape=(input_shape[0], input_shape[1]*3), dropout=dropout) for _ in range(num_heads)]
+
+    # dense0 = tf.keras.layers.Dense(representation_size*12, name=name+"resizing0", activation="sigmoid")
+    # dense1 = tf.keras.layers.Dense(representation_size*6, name=name+"resizing1", activation="sigmoid")
+    dense2 = tf.keras.layers.Dense(representation_size, name=name+"resizing2", activation="sigmoid") # sigmoid? relu? tanh? todo
+    # keras_dropout0 = Dropout(dropout)
+    # keras_dropout1 = Dropout(dropout)
+    keras_dropout2 = Dropout(dropout/2)
+
+    time_embedding = timedist(input_data)
+    x = K.concatenate([input_data, time_embedding], -1)
+    for attention_layer in attention_layers:
+        x = attention_layer(x)
+    # x = K.reshape(x, (-1, x.shape[1] * x.shape[2]))  # flat vector of features out
+    # if include_dense_0:
+    #     x = keras_dropout0(x)
+    #     x = dense0(x)
+    # x = keras_dropout1(x)
+    # x = dense1(x)
+    x = keras_dropout2(x)
+    x = dense2(x)
+    #x = K.expand_dims(x, 1)
+    return Model(input_data, x)
 
 def C3D_BASE(weights='sports1M'):
     """Instantiates a C3D Kerasl model
