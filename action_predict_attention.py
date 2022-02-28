@@ -2501,3 +2501,155 @@ class LATER_TST_2(ActionPredict):
         net_model.summary()
         plot_model(net_model, to_file='LATER_TST_FULL.png')
         return net_model
+
+
+class TST_3(ActionPredict):
+    """
+    later TST on text+images
+    Class init function
+
+    Args:
+        num_hidden_units: Number of recurrent hidden layers
+        cell_type: Type of RNN cell
+        **kwargs: Description
+    """
+
+    def __init__(self,
+                 num_hidden_units=256,
+                 cell_type='gru',
+                 **kwargs):
+        """
+        Class init function
+
+        Args:
+            num_hidden_units: Number of recurrent hidden layers
+            cell_type: Type of RNN cell
+            **kwargs: Description
+        """
+        super().__init__(**kwargs)
+        # Network parameters
+        self._num_hidden_units = num_hidden_units
+        self._rnn = self._gru if cell_type == 'gru' else self._lstm
+        self._rnn_cell = GRUCell if cell_type == 'gru' else LSTMCell
+        self._3dconv = C3DNet if self._backbone == 'c3d' else I3DNet
+        self._multi_self_attention = ModelTrunk_2
+        self.normlayer = BatchNormalization
+
+    def get_data(self, data_type, data_raw, model_opts):
+        assert model_opts['obs_length'] == 16
+        model_opts['normalize_boxes'] = False
+        self._generator = model_opts.get('generator', False)
+        data_type_sizes_dict = {}
+        process = model_opts.get('process', True)
+        dataset = model_opts['dataset']
+        data, neg_count, pos_count = self.get_data_sequence(data_type, data_raw, model_opts)
+
+        data_type_sizes_dict['box'] = data['box'].shape[1:]
+        if 'speed' in data.keys():
+            data_type_sizes_dict['speed'] = data['speed'].shape[1:]
+        # if 'context_cnn' in data.keys():
+        #     data_type_sizes_dict['context_cnn'] = data['context_cnn'].shape[1:]
+
+        # Store the type and size of each image
+        _data = []
+        data_sizes = []
+        data_types = []
+
+        model_opts_3d = model_opts.copy()
+
+        for d_type in model_opts['obs_input_type']:
+            if 'local' in d_type or 'context' in d_type or 'mask' in d_type:
+                if self._backbone == 'c3d':
+                    model_opts_3d['target_dim'] = (112, 112)
+                model_opts_3d['process'] = False
+                features, feat_shape = self.get_context_data(model_opts_3d, data, data_type, d_type)
+            elif 'pose' in d_type:
+                path_to_pose, _ = get_path(save_folder='poses',
+                                           dataset=dataset,
+                                           save_root_folder='data/features')
+                features = get_pose(data['image'],
+                                    data['ped_id'],
+                                    data_type=data_type,
+                                    file_path=path_to_pose,
+                                    dataset=model_opts['dataset'])
+                feat_shape = features.shape[1:]
+            else:
+                features = data[d_type]
+                feat_shape = features.shape[1:]
+            _data.append(features)
+            data_sizes.append(feat_shape)
+            data_types.append(d_type)
+        # create the final data file to be returned
+        if self._generator:
+            _data = (DataGenerator(data=_data,
+                                   labels=data['crossing'],
+                                   data_sizes=data_sizes,
+                                   process=process,
+                                   global_pooling=None,
+                                   input_type_list=model_opts['obs_input_type'],
+                                   batch_size=model_opts['batch_size'],
+                                   shuffle=data_type != 'test',
+                                   to_fit=data_type != 'test'), data['crossing'])  # set y to None
+        # global_pooling=self._global_pooling,
+        else:
+            _data = (_data, data['crossing'])
+
+        return {'data': _data,
+                'ped_id': data['ped_id'],
+                'tte': data['tte'],
+                'image': data['image'],
+                'data_params': {'data_types': data_types,
+                                'data_sizes': data_sizes,
+                                'transformer_params': {'time2vec_dim': model_opts['t_time2vec_dim'],
+                                                       'num_heads': model_opts['t_num_heads'],
+                                                       'head_size': model_opts['t_head_size'],
+                                                       'num_layers': model_opts['t_num_layers'],
+                                                       'dropout': model_opts['t_dropout']}
+                                },
+                'count': {'neg_count': neg_count, 'pos_count': pos_count}}
+
+    def get_model(self, data_params):
+        return_sequence = True
+        data_sizes = data_params['data_sizes']
+        data_types = data_params['data_types']
+        transformer_params = data_params['transformer_params']
+        network_inputs = []
+        encoder_outputs = []
+        core_size = len(data_sizes)
+
+        attention_size = self._num_hidden_units
+        earlyfusion = []
+        for i in range(0, core_size):
+            network_inputs.append(Input(shape=data_sizes[i], name='input_' + data_types[i]))
+            if i > 1:
+                earlyfusion.append(network_inputs[i])
+
+
+        x = self.normlayer(name='norm0_'+data_types[0], axis=-1, momentum=0.99, epsilon=0.0001)(network_inputs[0])
+        x = self._multi_self_attention(name='enc0_' + data_types[0], representation_size=attention_size, **transformer_params)(x)
+        encoder_outputs.append(x)
+        x = self.normlayer(name='norm1_'+data_types[1], axis=-1, momentum=0.99, epsilon=0.0001)(network_inputs[1])
+        x = self._multi_self_attention(name='enc1_' + data_types[1], representation_size=attention_size, **transformer_params)(x)
+        encoder_outputs.append(x)
+
+        x = Concatenate(name='concat_early', axis=2)(earlyfusion)
+        # x = tf.nn.l2_normalize(x, 2, epsilon=1e-12, name='norm_earlyfusion')
+        x = self.normlayer(name='norm2_' + data_types[2], axis=-1, momentum=0.99, epsilon=0.00001)(x)
+        x = self._multi_self_attention(name='enc2_' + data_types[2], representation_size=attention_size, input_shape=network_inputs[2].shape[1:], include_dense_0=False, **transformer_params)(x)
+        encoder_outputs.append(x)
+
+
+
+
+        x = Concatenate(name='concat_modalities', axis=1)(encoder_outputs)
+        encodings = attention_3d_block(x, dense_size=attention_size, modality='_modality')
+
+        model_output = Dense(1, activation='sigmoid',
+                             name='output_dense',
+                             activity_regularizer=regularizers.l2(0.001))(encodings)
+
+        net_model = Model(inputs=network_inputs,
+                          outputs=model_output)
+        net_model.summary()
+        plot_model(net_model, to_file='LATER_TST_FULL.png')
+        return net_model

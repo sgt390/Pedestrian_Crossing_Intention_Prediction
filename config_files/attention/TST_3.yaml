@@ -1,15 +1,14 @@
-model_opts: #
-  model: LATER_TST_2
-  obs_input_type: [local_context_cnn, scene_context, pose, box, speed]
+model_opts:
+  model: TST_3
+  obs_input_type: [local_context_cnn, mask_cnn, pose, box, speed]
   apply_class_weights: True
   normalize_boxes: True
   generator: True
-  time_to_event: [30, 60]
   t_time2vec_dim: 1
   t_num_heads: 4
   t_head_size: 128
   t_num_layers: 2 # 2
-  t_dropout: 0.2
+  t_dropout: 0.5
 net_opts:
   num_hidden_units: 256
   global_pooling: avg
@@ -19,5 +18,5 @@ net_opts:
 exp_opts:
   datasets: [jaad_beh, jaad_all, pie]
   batch_size: [2, 2, 2]
-  epochs: [80, 80, 60]  # [40, 40]
-  lr: [5.0e-07, 5.0e-07, 5.0e-05]
+  epochs: [100, 100, 100] # [80, 80, 80]
+  lr: [5.0e-07, 5.0e-07, 5.0e-07]
