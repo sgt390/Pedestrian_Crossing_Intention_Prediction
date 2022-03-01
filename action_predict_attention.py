@@ -577,6 +577,23 @@ class ActionPredict:
                             bbox = list(map(int, bbox[0:4]))
                             cropped_image = img_data[bbox[1]:bbox[3], bbox[0]:bbox[2], :]
                             img_features = img_pad(cropped_image, mode='pad_resize', size=target_dim[0])
+                        elif 'local_cnn' in crop_type:
+                            bbox = jitter_bbox(imp, [b], 'enlarge', crop_resize_ratio)[0]
+                            bbox = squarify(bbox, 1, img_data.shape[1])
+                            bbox = list(map(int, bbox[0:4]))
+                            cropped_image = img_data[bbox[1]:bbox[3], bbox[0]:bbox[2], :]
+                            img_features = img_pad(cropped_image, mode='pad_resize', size=target_dim[0])
+
+                            x = np.expand_dims(img_features, axis=0)
+                            x = preprocess_input(x)
+                            img_features = backbone_model.predict(x)
+                            img_features = tf.nn.avg_pool2d(img_features, ksize=[7, 7], strides=[1, 1, 1, 1],
+                                                            # ksize=[14, 14]
+                                                            padding='VALID')  # check output size
+                            img_features = tf.squeeze(img_features)
+                            # with tf.compact.v1.Session():
+                            img_features = img_features.numpy()
+
                         elif 'surround' in crop_type:
                             b_org = list(map(int, b[0:4])).copy()
                             bbox = jitter_bbox(imp, [b], 'enlarge', crop_resize_ratio)[0]
@@ -919,6 +936,8 @@ class ActionPredict:
             data_gen_params['crop_type'] = 'context_split'
         elif 'mask_vit' in feature_type:
             data_gen_params['crop_type'] = 'mask_vit'
+        elif 'local_cnn' == feature_type:
+            data_gen_params['crop_type'] = 'local_cnn'
         elif 'context_vit32' in feature_type:
             data_gen_params['crop_type'] = 'context_vit32'
         elif 'mask' in feature_type:
@@ -938,6 +957,7 @@ class ActionPredict:
             data_gen_params['crop_resize_ratio'] = eratio
         elif 'scene_context' in feature_type:
             data_gen_params['crop_type'] = 'scene_context'
+
 
         save_folder_name = feature_type
 
@@ -2627,9 +2647,12 @@ class TST_3(ActionPredict):
 
         x = self.normlayer(name='norm0_'+data_types[0], axis=-1, momentum=0.99, epsilon=0.0001)(network_inputs[0])
         x = self._multi_self_attention(name='enc0_' + data_types[0], representation_size=attention_size, **transformer_params)(x)
+        x = Lambda(lambda y: K.expand_dims(y, axis=1))(x)
         encoder_outputs.append(x)
+
         x = self.normlayer(name='norm1_'+data_types[1], axis=-1, momentum=0.99, epsilon=0.0001)(network_inputs[1])
         x = self._multi_self_attention(name='enc1_' + data_types[1], representation_size=attention_size, **transformer_params)(x)
+        x = Lambda(lambda y: K.expand_dims(y, axis=1))(x)
         encoder_outputs.append(x)
 
         x = Concatenate(name='concat_early', axis=2)(earlyfusion)
@@ -2638,6 +2661,7 @@ class TST_3(ActionPredict):
         x = self._multi_self_attention(name='enc2_' + data_types[2], representation_size=attention_size,
                                        input_shape=x.shape[1:], include_dense_0=False,
                                        **transformer_params)(x)
+        x = Lambda(lambda y: K.expand_dims(y, axis=1))(x)
         encoder_outputs.append(x)
 
 

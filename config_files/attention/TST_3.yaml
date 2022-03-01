@@ -1,6 +1,6 @@
 model_opts:
   model: TST_3
-  obs_input_type: [local_context_cnn, mask_cnn, pose, box, speed]
+  obs_input_type: [local_cnn, mask_cnn, pose, box, speed]
   apply_class_weights: True
   normalize_boxes: True
   generator: True

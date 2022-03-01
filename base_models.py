@@ -634,7 +634,6 @@ def ModelTrunk_2(name='ModelTrunk', time2vec_dim=1, num_heads=4, head_size=128, 
     x = dense2(x)
     #x = K.expand_dims(x, 1)
     return Model(input_data, x)
-# with dropout /2 does not work.
 
 def C3D_BASE(weights='sports1M'):
     """Instantiates a C3D Kerasl model
