@@ -2523,7 +2523,7 @@ class LATER_TST_2(ActionPredict):
         return net_model
 
 
-class TST_3(ActionPredict):
+class TST_4(ActionPredict):
     """
     later TST on text+images
     Class init function
