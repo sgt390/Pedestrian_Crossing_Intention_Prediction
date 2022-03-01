@@ -1077,9 +1077,9 @@ class ActionPredict:
         Returns:
             A list of call backs or None if learning_scheduler is false
         """
-        wandb_callback = WandbCallback(log_evaluation=True)
-        callbacks = [wandb_callback]
-        #callbacks = [] # todo swap
+        # wandb_callback = WandbCallback(log_evaluation=True)
+        # callbacks = [wandb_callback]
+        callbacks = [] # todo swap
 
 
 
