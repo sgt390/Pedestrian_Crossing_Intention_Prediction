@@ -2635,7 +2635,9 @@ class TST_3(ActionPredict):
         x = Concatenate(name='concat_early', axis=2)(earlyfusion)
         # x = tf.nn.l2_normalize(x, 2, epsilon=1e-12, name='norm_earlyfusion')
         x = self.normlayer(name='norm2_' + data_types[2], axis=-1, momentum=0.99, epsilon=0.00001)(x)
-        x = self._multi_self_attention(name='enc2_' + data_types[2], representation_size=attention_size, input_shape=network_inputs[2].shape[1:], include_dense_0=False, **transformer_params)(x)
+        x = self._multi_self_attention(name='enc2_' + data_types[2], representation_size=attention_size,
+                                       input_shape=x.shape[1:], include_dense_0=False,
+                                       **transformer_params)(x)
         encoder_outputs.append(x)
 
 
