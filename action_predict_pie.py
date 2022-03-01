@@ -575,6 +575,22 @@ class ActionPredict:
                             img_data[b_org[1]:b_org[3], b_org[0]:b_org[2], :] = 128
                             cropped_image = img_data[bbox[1]:bbox[3], bbox[0]:bbox[2], :]
                             img_features = img_pad(cropped_image, mode='pad_resize', size=target_dim[0])
+                        elif 'local_cnn' in crop_type:
+                            bbox = jitter_bbox(imp, [b], 'enlarge', crop_resize_ratio)[0]
+                            bbox = squarify(bbox, 1, img_data.shape[1])
+                            bbox = list(map(int, bbox[0:4]))
+                            cropped_image = img_data[bbox[1]:bbox[3], bbox[0]:bbox[2], :]
+                            img_features = img_pad(cropped_image, mode='pad_resize', size=target_dim[0])
+
+                            x = np.expand_dims(img_features, axis=0)
+                            x = preprocess_input(x)
+                            img_features = backbone_model.predict(x)
+                            img_features = tf.nn.avg_pool2d(img_features, ksize=[7, 7], strides=[1, 1, 1, 1],
+                                                            # ksize=[14, 14]
+                                                            padding='VALID')  # check output size
+                            img_features = tf.squeeze(img_features)
+                            # with tf.compact.v1.Session():
+                            img_features = img_features.numpy()
                         else:
                             raise ValueError('ERROR: Undefined value for crop_type {}!'.format(crop_type))
                     # Save the file
@@ -900,6 +916,8 @@ class ActionPredict:
             data_gen_params['crop_mode'] = 'pad_resize'
         elif 'mask_cnn' in feature_type:
             data_gen_params['crop_type'] = 'mask_cnn'
+        elif 'local_cnn' == feature_type:
+            data_gen_params['crop_type'] = 'local_cnn'
         elif 'context_split' in feature_type:
             data_gen_params['crop_type'] = 'context_split_surround'
         elif 'context_split' in feature_type:
