@@ -1,6 +1,6 @@
 model_opts: #
-  model: LATER_TST_2
-  obs_input_type: [local_cnn, scene_context, pose, box, speed]
+  model: TST_VISION
+  obs_input_type: [local_cnn, mask_cnn, pose, box, speed]
   apply_class_weights: True
   normalize_boxes: True
   generator: True
