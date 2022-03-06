@@ -581,9 +581,18 @@ def ModelTrunk(name='ModelTrunk', time2vec_dim=1, num_heads=4, head_size=128, ff
         ff_dim = head_size
     attention_layers = [AttentionBlock(num_heads=num_heads, head_size=head_size, ff_dim=ff_dim, input_shape=(input_shape[0], input_shape[1]*3), dropout=dropout) for _ in range(num_layers)]
 
-    dense0 = tf.keras.layers.Dense(representation_size*12, name=name+"resizing0", activation="relu")
-    dense1 = tf.keras.layers.Dense(representation_size*6, name=name+"resizing1", activation="relu")
-    dense2 = tf.keras.layers.Dense(representation_size, name=name+"resizing2", activation="relu")
+    dense0 = tf.keras.layers.Dense(representation_size*12, name=name+"resizing0", activation="relu",
+                                   kernel_initializer='random_normal',
+                                   bias_initializer='zeros'
+                                   )
+    dense1 = tf.keras.layers.Dense(representation_size*6, name=name+"resizing1", activation="relu",
+                                   kernel_initializer='random_normal',
+                                   bias_initializer='zeros'
+                                   )
+    dense2 = tf.keras.layers.Dense(representation_size, name=name+"resizing2", activation="relu",
+                                   kernel_initializer='random_normal',
+                                   bias_initializer='zeros'
+                                   )
     keras_dropout0 = Dropout(dropout)
     keras_dropout1 = Dropout(dropout)
     keras_dropout2 = Dropout(dropout/2)
@@ -601,7 +610,11 @@ def ModelTrunk(name='ModelTrunk', time2vec_dim=1, num_heads=4, head_size=128, ff
     x = keras_dropout2(x)
     x = dense2(x)
     x = K.expand_dims(x, 1)
-    return Model(input_data, x)
+    model = Model(input_data, x)
+    model.layers[7].trainable = False  # freeze reshape
+    model.layers[9].trainable = False
+    model.layers[11].trainable = False
+    return model
 
 
 def ModelTrunk_2(name='ModelTrunk', time2vec_dim=1, num_heads=4, head_size=128, ff_dim=None, num_layers=2,
