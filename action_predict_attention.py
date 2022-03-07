@@ -275,7 +275,7 @@ class ActionPredict:
 
         base_model = backbone_dict[self._backbone](**model_inputs) if self._backbone in backbone_dict else None
         if 'vit' in crop_type:
-            vit16_model = vit.vit_b16(**vit_model_inputs)
+            # vit16_model = vit.vit_b16(**vit_model_inputs)
             vit32_model = vit.vit_b32(**vit_model_inputs)
 
         backbone_model = base_model
@@ -471,6 +471,23 @@ class ActionPredict:
                         x = np.expand_dims(x, axis=0)
                         x = vit.preprocess_inputs(x) # ! global uses vit / local still uses default cnn
                         img_features = vit32_model.predict(x) # ! generalize somehow? line above as well TODO fix inputs of next layer (768 out)
+                        img_features = tf.squeeze(img_features)
+                        img_features = img_features.numpy()
+                        if flip_image:
+                            img_features = cv2.flip(img_features, 1)
+
+                    elif crop_type == 'local_vit':
+                        img_data = cv2.imread(imp)
+                        ori_dim = img_data.shape
+                        bbox = jitter_bbox(imp, [b], 'enlarge', crop_resize_ratio)[0]
+                        bbox = squarify(bbox, 1, img_data.shape[1])
+                        bbox = list(map(int, bbox[0:4]))
+                        cropped_image = img_data[bbox[1]:bbox[3], bbox[0]:bbox[2], :]
+                        img_features = img_pad(cropped_image, mode='pad_resize', size=target_dim[0])
+
+                        x = np.expand_dims(img_features, axis=0)
+                        x = vit.preprocess_inputs(x) # ! global uses vit / local still uses default cnn
+                        img_features = vit32_model.predict(x)
                         img_features = tf.squeeze(img_features)
                         img_features = img_features.numpy()
                         if flip_image:
@@ -940,6 +957,8 @@ class ActionPredict:
             data_gen_params['crop_type'] = 'local_cnn'
         elif 'context_vit32' in feature_type:
             data_gen_params['crop_type'] = 'context_vit32'
+        elif 'local_vit' in feature_type:
+            data_gen_params['crop_type'] = 'local_vit'
         elif 'mask' in feature_type:
             data_gen_params['crop_type'] = 'mask'
             # data_gen_params['crop_mode'] = 'pad_resize'
