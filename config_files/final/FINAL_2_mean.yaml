@@ -1,0 +1,23 @@
+model_opts: #
+  model: TST_VISION_MEAN
+  obs_input_type: [local_cnn, mask_cnn, pose, box, speed]
+  apply_class_weights: True
+  normalize_boxes: True
+  generator: True
+  time_to_event: [30, 60]
+  t_time2vec_dim: 1
+  t_num_heads: 4
+  t_head_size: 128
+  t_num_layers: 2 # 2
+  t_dropout: 0.2
+net_opts:
+  num_hidden_units: 256
+  global_pooling: avg
+  regularizer_val: 0.0001
+  cell_type: gru
+  backbone: vgg19
+exp_opts:
+  datasets: [jaad_beh, jaad_all, pie]
+  batch_size: [2, 2, 2]
+  epochs: [60, 60, 60]  # [80, 80, 60]
+  lr: [5.0e-07, 5.0e-07, 5.0e-07] # pie -05?
