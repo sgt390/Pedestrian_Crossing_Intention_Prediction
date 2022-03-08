@@ -685,7 +685,7 @@ def ModelTrunk_3(name='ModelTrunk', time2vec_dim=1, num_heads=4, head_size=128, 
                                    )
     # keras_dropout0 = Dropout(dropout)
     # keras_dropout1 = Dropout(dropout)
-    keras_dropout2 = Dropout(dropout)
+    # keras_dropout2 = Dropout(dropout)
 
     time_embedding = timedist(input_data)
     x = K.concatenate([input_data, time_embedding], -1)
@@ -697,7 +697,8 @@ def ModelTrunk_3(name='ModelTrunk', time2vec_dim=1, num_heads=4, head_size=128, 
     #     x = dense0(x)
     # x = keras_dropout1(x)
     # x = dense1(x)
-    x = keras_dropout2(x)
+    # x = keras_dropout2(x)
+    x = BatchNormalization(name='norm0_'+ name, axis=-1, momentum=0.99, epsilon=0.0001)(x)
     x = dense2(x)
     x = K.expand_dims(x, 1)
     model = Model(input_data, x)
