@@ -574,7 +574,7 @@ class Time2Vec(keras.layers.Layer):
 #                  dropout=0, representation_size=None, input_data=Input(shape=(16, 512))):
 def ModelTrunk(name='ModelTrunk', time2vec_dim=1, num_heads=4, head_size=128, ff_dim=None, num_layers=2,
                dropout=0.4, representation_size=None, input_shape=(16, 512), include_dense_0=True):
-    input_data = Input(input_shape)
+    input_data = Input(input_shape, name="input_" + name)
     time2vec = Time2Vec(kernel_size=time2vec_dim)
     timedist = keras.layers.TimeDistributed(time2vec)
     if ff_dim is None:
@@ -637,7 +637,9 @@ def ModelTrunk_2(name='ModelTrunk', time2vec_dim=1, num_heads=4, head_size=128, 
     x = K.concatenate([input_data, time_embedding], -1)
     for attention_layer in attention_layers:
         x = attention_layer(x)
-    x = K.reshape(x, (-1, x.shape[1] * x.shape[2]))  # flat vector of features out
+    # x = K.reshape(x, (-1, x.shape[1] * x.shape[2]))  # flat vector of features out
+    # resize - maxpooling
+
     if include_dense_0:
       x = keras_dropout0(x)
       x = dense0(x)
