@@ -2547,6 +2547,7 @@ class LATER_TST_2(ActionPredict):
         return net_model
 
 
+
 class TST_4(ActionPredict):
     """
     later TST on text+images
@@ -2706,6 +2707,9 @@ class TST_4(ActionPredict):
 
 
 # find a better concatenation
+# tst
+# early fusion on non-visual
+# later on visual
 class TST_5(ActionPredict):
     """
     later TST on text+images
@@ -2829,12 +2833,12 @@ class TST_5(ActionPredict):
 
 
         x = self.normlayer(name='norm0_'+data_types[0], axis=-1, momentum=0.99, epsilon=0.00001)(network_inputs[0])
-        x = self._multi_self_attention(name='enc0_' + data_types[0], representation_size=attention_size, **transformer_params)(x)
+        x = self._multi_self_attention(name='enc0_' + data_types[0], representation_size=attention_size, input_shape=(16, network_inputs[0].shape[2]), **transformer_params)(x)
         x = Lambda(lambda y: K.expand_dims(y, axis=1))(x)
         encoder_outputs.append(x)
 
         x = self.normlayer(name='norm1_'+data_types[1], axis=-1, momentum=0.99, epsilon=0.00001)(network_inputs[1])
-        x = self._multi_self_attention(name='enc1_' + data_types[1], representation_size=attention_size, **transformer_params)(x)
+        x = self._multi_self_attention(name='enc1_' + data_types[1], representation_size=attention_size, input_shape=(16, network_inputs[1].shape[2]), **transformer_params)(x)
         x = Lambda(lambda y: K.expand_dims(y, axis=1))(x)
         encoder_outputs.append(x)
 
