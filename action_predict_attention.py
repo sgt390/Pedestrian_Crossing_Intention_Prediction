@@ -2834,12 +2834,10 @@ class TST_5(ActionPredict):
 
         x = self.normlayer(name='norm0_'+data_types[0], axis=-1, momentum=0.99, epsilon=0.00001)(network_inputs[0])
         x = self._multi_self_attention(name='enc0_' + data_types[0], representation_size=attention_size, input_shape=(16, network_inputs[0].shape[2]), **transformer_params)(x)
-        x = Lambda(lambda y: K.expand_dims(y, axis=1))(x)
         encoder_outputs.append(x)
 
         x = self.normlayer(name='norm1_'+data_types[1], axis=-1, momentum=0.99, epsilon=0.00001)(network_inputs[1])
         x = self._multi_self_attention(name='enc1_' + data_types[1], representation_size=attention_size, input_shape=(16, network_inputs[1].shape[2]), **transformer_params)(x)
-        x = Lambda(lambda y: K.expand_dims(y, axis=1))(x)
         encoder_outputs.append(x)
 
         x = Concatenate(name='concat_early', axis=2)(earlyfusion)
@@ -2848,7 +2846,6 @@ class TST_5(ActionPredict):
         x = self._multi_self_attention(name='enc2_' + data_types[2], representation_size=attention_size,
                                        input_shape=x.shape[1:], include_dense_0=False,
                                        **transformer_params)(x)
-        x = Lambda(lambda y: K.expand_dims(y, axis=1))(x)
         encoder_outputs.append(x)
 
 
@@ -2864,7 +2861,7 @@ class TST_5(ActionPredict):
         net_model = Model(inputs=network_inputs,
                           outputs=model_output)
         net_model.summary()
-        plot_model(net_model, to_file='LATER_TST_FULL.png')
+        plot_model(net_model, to_file='TST_5.png')
         return net_model
 
 
