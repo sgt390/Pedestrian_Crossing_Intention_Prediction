@@ -2983,10 +2983,10 @@ class TST_VISION_MEAN(ActionPredict):
             network_inputs.append(Input(shape=data_sizes[i], name='input_' + data_types[i]))
 
         x = self.normlayer(name='norm0_'+data_types[0], axis=-1, momentum=0.99, epsilon=0.0001)(network_inputs[0]) # add input 16, 768 for vit!
-        x = self._multi_self_attention(name='enc0_' + data_types[0], representation_size=attention_size, **transformer_params)(x)
+        x = self._multi_self_attention(name='enc0_' + data_types[0], input_shape=(16, network_inputs[0].shape[2]), representation_size=attention_size, **transformer_params)(x)
         encoder_outputs.append(x)
         x = self.normlayer(name='norm1_'+data_types[0], axis=-1, momentum=0.99, epsilon=0.0001)(network_inputs[1])
-        x = self._multi_self_attention(name='enc1_' + data_types[1], representation_size=attention_size, **transformer_params)(x)
+        x = self._multi_self_attention(name='enc1_' + data_types[1], input_shape=(16, network_inputs[1].shape[2]), representation_size=attention_size, **transformer_params)(x)
         encoder_outputs.append(x)
         x = self._rnn(name='enc2_' + data_types[2], r_sequence=return_sequence)(network_inputs[2])
         current = [x, network_inputs[3]]
@@ -3009,3 +3009,5 @@ class TST_VISION_MEAN(ActionPredict):
         net_model.summary()
         plot_model(net_model, to_file='TST_VISION_MEAN.png')
         return net_model
+
+
