@@ -1,5 +1,5 @@
-model_opts: # as hybrid-fusion with tst on visual features
-  model: TST_VISION
+model_opts: # as final_2 but uses mean for concatenating the tst features.
+  model: TST_VISION_MEAN
   obs_input_type: [local_cnn, mask_cnn, pose, box, speed]
   apply_class_weights: True
   normalize_boxes: True
