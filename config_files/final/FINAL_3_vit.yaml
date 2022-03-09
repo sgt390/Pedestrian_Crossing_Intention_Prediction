@@ -1,6 +1,6 @@
 model_opts: # as final_2 but uses mean for concatenating the tst features.
   model: TST_VISION_MEAN
-  obs_input_type: [local_vit, mask_cnn, pose, box, speed]
+  obs_input_type: [local_vit, mask_vit, pose, box, speed]
   apply_class_weights: True
   normalize_boxes: True
   generator: True
