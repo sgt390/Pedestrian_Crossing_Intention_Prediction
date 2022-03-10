@@ -1957,7 +1957,7 @@ class LATER_TST_FULL(ActionPredict):
         self._rnn = self._gru if cell_type == 'gru' else self._lstm
         self._rnn_cell = GRUCell if cell_type == 'gru' else LSTMCell
         self._3dconv = C3DNet if self._backbone == 'c3d' else I3DNet
-        self._multi_self_attention = ModelTrunk
+        self._multi_self_attention = ModelTrunk_3
         self.normlayer = BatchNormalization
 
     def get_data(self, data_type, data_raw, model_opts):
@@ -2048,10 +2048,10 @@ class LATER_TST_FULL(ActionPredict):
 
 
         x = self.normlayer(name='norm0_'+data_types[0], axis=-1, momentum=0.99, epsilon=0.0001)(network_inputs[0])
-        x = self._multi_self_attention(name='enc0_' + data_types[0], representation_size=attention_size, **transformer_params)(x)
+        x = self._multi_self_attention(name='enc0_' + data_types[0], representation_size=attention_size, input_shape=network_inputs[0].shape[1:], **transformer_params)(x)
         encoder_outputs.append(x)
         x = self.normlayer(name='norm1_'+data_types[1], axis=-1, momentum=0.99, epsilon=0.0001)(network_inputs[1])
-        x = self._multi_self_attention(name='enc1_' + data_types[1], representation_size=attention_size, **transformer_params)(x)
+        x = self._multi_self_attention(name='enc1_' + data_types[1], representation_size=attention_size, input_shape=network_inputs[1].shape[1:], **transformer_params)(x)
         encoder_outputs.append(x)
         x = self.normlayer(name='norm2_'+data_types[2], axis=-1, momentum=0.99, epsilon=0.00001)(network_inputs[2])
         x = self._multi_self_attention(name='enc2_' + data_types[2], representation_size=attention_size, input_shape=network_inputs[2].shape[1:], include_dense_0=False, **transformer_params)(x)
