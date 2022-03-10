@@ -1928,8 +1928,9 @@ class PCPA_TR_VISUAL(ActionPredict):
         return net_model
 
 
-class LATER_TST_FULL(ActionPredict):
+class TST_3(ActionPredict):
     """
+    LATER_TST_FULL
     later TST on text+images
     Class init function
 
