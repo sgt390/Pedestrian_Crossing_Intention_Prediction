@@ -663,7 +663,7 @@ def ModelTrunk_2(name='ModelTrunk', time2vec_dim=1, num_heads=4, head_size=128, 
 
 #mean
 def ModelTrunk_3(name='ModelTrunk', time2vec_dim=1, num_heads=4, head_size=128, ff_dim=None, num_layers=2,
-               dropout=0.4, representation_size=None, input_shape=(16, 512), include_dense_0=True):
+               dropout=0.4, representation_size=None, input_shape=(16, 512)):
     input_data = Input(input_shape, name="input_" + name)
     time2vec = Time2Vec(kernel_size=time2vec_dim)
     timedist = keras.layers.TimeDistributed(time2vec)
@@ -671,40 +671,53 @@ def ModelTrunk_3(name='ModelTrunk', time2vec_dim=1, num_heads=4, head_size=128, 
         ff_dim = head_size
     attention_layers = [AttentionBlock(num_heads=num_heads, head_size=head_size, ff_dim=ff_dim, input_shape=(input_shape[0], input_shape[1]*3), dropout=dropout) for _ in range(num_layers)]
 
-    # dense0 = tf.keras.layers.Dense(representation_size*12, name=name+"resizing0", activation="relu",
-    #                                kernel_initializer='random_normal',
-    #                                bias_initializer='zeros'
-    #                                )
-    # dense1 = tf.keras.layers.Dense(representation_size*6, name=name+"resizing1", activation="relu",
-    #                                kernel_initializer='random_normal',
-    #                                bias_initializer='zeros'
-    #                                )
     dense2 = tf.keras.layers.Dense(representation_size, name=name+"resizing2", activation="relu",
                                    kernel_initializer='random_normal',
                                    bias_initializer='zeros'
                                    )
-    # keras_dropout0 = Dropout(dropout)
-    # keras_dropout1 = Dropout(dropout)
-    # keras_dropout2 = Dropout(dropout)
 
     time_embedding = timedist(input_data)
     x = K.concatenate([input_data, time_embedding], -1)
     for attention_layer in attention_layers:
         x = attention_layer(x)
     x = K.mean(x, -2)  # flat vector of features out
-    # if include_dense_0:
-    #     x = keras_dropout0(x)
-    #     x = dense0(x)
-    # x = keras_dropout1(x)
-    # x = dense1(x)
-    # x = keras_dropout2(x)
     x = BatchNormalization(name='norm0_'+ name, axis=-1, momentum=0.99, epsilon=0.0001)(x)
     x = dense2(x)
     x = K.expand_dims(x, 1)
     model = Model(input_data, x)
-    # model.layers[7].trainable = False  # freeze reshape
-    # model.layers[9].trainable = False
-    # model.layers[11].trainable = False
+    return model
+
+
+# mean for non-visual
+def ModelTrunk_3b(name='ModelTrunk', time2vec_dim=1, num_heads=4, head_size=128, ff_dim=None, num_layers=2,
+               dropout=0.4, representation_size=None, input_shape=(16, 512)):
+
+    num_heads = 2
+    head_size = 64
+    num_layers = 1
+    dropout = 0
+
+    input_data = Input(input_shape, name="input_" + name)
+    time2vec = Time2Vec(kernel_size=time2vec_dim)
+    timedist = keras.layers.TimeDistributed(time2vec)
+    if ff_dim is None:
+        ff_dim = head_size
+    attention_layers = [AttentionBlock(num_heads=num_heads, head_size=head_size, ff_dim=ff_dim, input_shape=(input_shape[0], input_shape[1]*3), dropout=dropout) for _ in range(num_layers)]
+
+    dense2 = tf.keras.layers.Dense(representation_size, name=name+"resizing2", activation="relu",
+                                   kernel_initializer='random_normal',
+                                   bias_initializer='zeros'
+                                   )
+
+    time_embedding = timedist(input_data)
+    x = K.concatenate([input_data, time_embedding], -1)
+    for attention_layer in attention_layers:
+        x = attention_layer(x)
+    x = K.mean(x, -2)  # flat vector of features out
+    x = BatchNormalization(name='norm0_'+ name, axis=-1, momentum=0.99, epsilon=0.0001)(x)
+    x = dense2(x)
+    x = K.expand_dims(x, 1)
+    model = Model(input_data, x)
     return model
 
 
