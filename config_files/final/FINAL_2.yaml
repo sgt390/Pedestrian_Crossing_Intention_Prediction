@@ -15,7 +15,7 @@ net_opts:
   global_pooling: avg
   regularizer_val: 0.0001
   cell_type: gru
-  backbone: efficientnet # vgg19
+  backbone: vgg19 # efficientnet # vgg19
 exp_opts:
   datasets: [jaad_beh, jaad_all, pie]
   batch_size: [2, 2, 2]
